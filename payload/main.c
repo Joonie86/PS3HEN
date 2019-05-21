@@ -1370,7 +1370,7 @@ LV2_SYSCALL2(int, sm_set_fan_policy_sc,(uint8_t arg1, uint8_t arg2, uint8_t arg3
 	f.addr=(void*)MKA(sm_set_fan_policy);
 	f.toc=(void *)MKA(TOC);
 	int(*func)(uint64_t, uint8_t,uint8_t,uint8_t)=(void*)&f;
-	return func(0x8000000000474C38,arg1,arg2,arg3);
+	return func(MKA(sysmem_obj),arg1,arg2,arg3);
 }
 
 LV2_SYSCALL2(int, sm_get_fan_policy_sc,(uint8_t id, uint8_t *st, uint8_t *policy, uint8_t * mode, uint8_t *duty))
@@ -1383,7 +1383,7 @@ LV2_SYSCALL2(int, sm_get_fan_policy_sc,(uint8_t id, uint8_t *st, uint8_t *policy
 	f.addr=(void*)MKA(sm_get_fan_policy);
 	f.toc=(void *)MKA(TOC);
 	int(*func)(uint64_t, uint8_t,uint8_t *,uint8_t *,uint8_t *,uint8_t *,uint64_t)=(void*)&f;
-	int ret=func(0x8000000000474C38,id,&st1,&policy1,&mode1,&duty1,10000000);
+	int ret=func(MKA(sysmem_obj),id,&st1,&policy1,&mode1,&duty1,10000000);
 	if(ret==0)
 	{
 		ret=copy_to_user(&st1, st,1);

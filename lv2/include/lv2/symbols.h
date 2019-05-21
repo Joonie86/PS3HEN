@@ -263,6 +263,7 @@
 #define lic_patch										0x56230
 #define ode_patch										0x2275F4
 #define ECDSA_FLAG                                      0x474A80
+#define sysmem_obj                                      0x474C38
 
 /* vars */
 #define thread_info_symbol								0x37DE30
