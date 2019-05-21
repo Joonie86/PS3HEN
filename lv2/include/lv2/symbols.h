@@ -167,6 +167,7 @@
 #define ss_get_open_psid_symbol							0x22A668
 #define update_mgr_read_eeprom_symbol					0x223A78
 #define update_mgr_write_eeprom_symbol					0x2239C0
+#define um_if_get_token_symbol                          0x2253dc
 
 #define ss_params_get_update_status_symbol				0x50AB4
 
@@ -215,12 +216,6 @@
 #define module_sdk_version_patch_offset					0x26717C
 #define module_add_parameter_to_parse_sprxpatch_offset	0x88310
 
-#define user_thread_prio_patch							0x203FC
-#define user_thread_prio_patch2							0x20408
-
-#define lic_patch										0x56230
-#define ode_patch										0x2275F4
-
 /* Rtoc entries */
 
 #define io_rtoc_entry_1									0x25B8
@@ -255,6 +250,19 @@
 #define patch_func8_offset2 							0x56614
 #define patch_func9_offset 								0x5A6F8
 #define mem_base2										0x3D90
+#define sm_set_fan_policy                               0x264734
+#define sm_get_fan_policy                               0x26293c
+#define ECDSA_1                                         0x59dc4
+#define ECDSA_2                                         0x2d2b34
+#define fix_80010009                                    0x5a6e4
+#define fix_8001003D                                    0x5658C
+#define fix_8001003E                                    0x56650
+#define PATCH_JUMP                                      0x56604
+#define user_thread_prio_patch							0x203FC
+#define user_thread_prio_patch2							0x20408
+#define lic_patch										0x56230
+#define ode_patch										0x2275F4
+#define ECDSA_FLAG                                      0x474A80
 
 /* vars */
 #define thread_info_symbol								0x37DE30

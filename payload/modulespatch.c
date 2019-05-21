@@ -399,22 +399,22 @@ void do_patch32(uint64_t addr, uint32_t patch)
 
 LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj, uint64_t *spu_args))
 {
-		do_patch32(0x80000000000564b0,0x7FE307B4); // patch_func8_offset1 
-		do_patch32(0x8000000000056614,0x48216FB5); // patch_func8_offset2 
-		do_patch32(0x80000000000203fc,0x419DFF84); // user_thread_prio_patch	for netiso
-		do_patch32(0x8000000000020408,0x419D0258); // user_thread_prio_patch2	for netiso
-		do_patch32(0x8000000000059dc4,0x7FE307B4); // ECDSA 1 
-		do_patch32(0x8000000000056230,0x48240EED); // ignore LIC.DAT check			
-		do_patch32(0x800000000005a6f8,0x419e00ac); // fix 80010009 error
-		do_patch32(0x800000000005a6e4,0x419e00ac); // fix 80010009 error
-		do_patch(0x80000000002275f4,0xE86900007C6307B4); // fix 0x8001002B / 80010017 errors  known as ODE patch
-		do_patch(0x80000000002d2b34,0xF821FE617CE802A6); // ECDSA 2
-		do_patch(0x8000000000003d90,0xF821FEB17C0802A6); // psjailbreak, PL3, etc destroy this function to copy their code there.
-		do_patch(0x800000000005658C,0x63FF003D419EFFD4);  // fix 8001003D error
-		do_patch(0x8000000000056650,0x3FE0800163FF003E); // fix 8001003E error
-		do_patch(0x8000000000056604,0x2F840004409C0048); //PATCH_JUMP
+		do_patch32(MKA(patch_func8_offset1),0x7FE307B4); 
+		do_patch32(MKA(patch_func8_offset2),0x48216FB5);
+		do_patch32(MKA(user_thread_prio_patch),0x419DFF84); // for NetISO
+		do_patch32(MKA(user_thread_prio_patch2),0x419D0258); // for NetISO
+		do_patch32(MKA(ECDSA_1),0x7FE307B4);
+		do_patch32(MKA(lic_patch),0x48240EED); // ignore LIC.DAT check	
+		do_patch32(MKA(patch_func9_offset),0x419e00ac);
+		do_patch32(MKA(fix_80010009),0x419e00ac);
+		do_patch(MKA(ode_patch),0xE86900007C6307B4); // fix 0x8001002B / 80010017 errors  known as ODE patch
+		do_patch(MKA(ECDSA_2),0xF821FE617CE802A6);
+		do_patch(MKA(mem_base2),0xF821FEB17C0802A6); // psjailbreak, PL3, etc destroy this function to copy their code there.
+		do_patch(MKA(fix_8001003D),0x63FF003D419EFFD4);
+		do_patch(MKA(fix_8001003E),0x3FE0800163FF003E);
+		do_patch(MKA(PATCH_JUMP),0x2F840004409C0048);
 
-		*(uint64_t *)0x8000000000474A80=0;
+		*(uint64_t *)MKA(ECDSA_FLAG)=0;
 		unhook_all_modules();
 		
 		unhook_all_storage_ext();
@@ -422,8 +422,8 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 		unhook_all_map_path();
 		unhook_function_with_precall(get_syscall_address(801),sys_fs_open,6);
 		unhook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
-		unhook_function_with_cond_postcall(0x2253dc,um_if_get_token,5);
-		unhook_function_with_cond_postcall(0x223a78,read_eeprom_by_offset,3);
+		unhook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
+		unhook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
 			
 #ifdef DEBUG		
 		debug_uninstall();
@@ -455,22 +455,22 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 			timer_usleep(700000);
 		}
 	}
-			do_patch32(0x80000000000564b0,0x38600000); // patch_func8_offset1 
-			do_patch32(0x8000000000056614,0x60000000); // patch_func8_offset2 
-			do_patch32(0x80000000000203fc,0x60000000); // user_thread_prio_patch	for netiso
-			do_patch32(0x8000000000020408,0x60000000); // user_thread_prio_patch2	for netiso
-			do_patch32(0x8000000000059dc4,0x38600000); // ECDSA 1
-			do_patch32(0x8000000000056230,0x38600001); // ignore LIC.DAT check	
-			do_patch32(0x800000000005a6f8,0x60000000); // fix 80010009 error
-			do_patch32(0x800000000005a6e4,0x60000000); // fix 80010009 error
-			do_patch(0x80000000002275f4,0x38600000F8690000);  // fix 0x8001002B / 80010017 errors  known as ODE patch
-			do_patch(0x80000000002d2b34,0x386000004e800020); // ECDSA 2
-			do_patch(0x8000000000003d90,0x386000014e800020); // psjailbreak, PL3, etc destroy this function to copy their code there.
-			do_patch(0x800000000005658C,0x63FF003D60000000);  // fix 8001003D error
-			do_patch(0x8000000000056650,0x3FE080013BE00000); // fix 8001003E error
-			do_patch(0x8000000000056604,0x2F84000448000098); //PATCH_JUMP
+			do_patch32(MKA(patch_func8_offset1),0x38600000); 
+			do_patch32(MKA(patch_func8_offset2),0x60000000);
+			do_patch32(MKA(user_thread_prio_patch),0x60000000); // for NetISO
+			do_patch32(MKA(user_thread_prio_patch2),0x60000000); // for NetISO
+			do_patch32(MKA(ECDSA_1),0x38600000);
+			do_patch32(MKA(lic_patch),0x38600001); // ignore LIC.DAT check	
+			do_patch32(MKA(patch_func9_offset),0x60000000);
+			do_patch32(MKA(fix_80010009),0x60000000);
+			do_patch(MKA(ode_patch),0x38600000F8690000); // fix 0x8001002B / 80010017 errors  known as ODE patch
+			do_patch(MKA(ECDSA_2),0x386000004e800020);
+			do_patch(MKA(mem_base2),0x386000014e800020); // psjailbreak, PL3, etc destroy this function to copy their code there.
+			do_patch(MKA(fix_8001003D),0x63FF003D60000000);
+			do_patch(MKA(fix_8001003E),0x3FE080013BE00000);
+			do_patch(MKA(PATCH_JUMP),0x2F84000448000098);
 			
-			*(uint64_t *)0x8000000000474A80=0;
+			*(uint64_t *)MKA(ECDSA_FLAG)=0;
 		//	*(uint64_t *)(r4+8)=0; //ecdsa flag
 		#ifdef DEBUG
 		debug_hook();
@@ -482,8 +482,8 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 			storage_ext_patches();
 			hook_function_with_precall(get_syscall_address(801),sys_fs_open,6);
 			hook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
-			hook_function_with_cond_postcall(0x2253dc,um_if_get_token,5);
-			hook_function_with_cond_postcall(0x223a78,read_eeprom_by_offset,3);
+			hook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
+			hook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
 	return 0;
 }
 
