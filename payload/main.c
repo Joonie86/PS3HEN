@@ -587,8 +587,12 @@ void ecdsa_sign(u8 *hash, u8 *R, u8 *S)
 
 #if defined(FIRMWARE_4_82)
 	#define FIRMWARE_VERSION	0x0482
+#elif defined(FIRMWARE_4_82DEX)
+	#define FIRMWARE_VERSION	0x0482    
 #elif defined(FIRMWARE_4_84)
 	#define FIRMWARE_VERSION	0x0484    
+#elif defined(FIRMWARE_4_84DEX)
+	#define FIRMWARE_VERSION	0x0484        
 #endif
 
 #if defined(CFW)
@@ -994,7 +998,7 @@ LV2_SYSCALL2(void, sys_cfw_poke, (uint64_t *ptr, uint64_t value))
 {
 	DPRINTF("LV2 poke %p %016lx\n", ptr, value);
 	uint64_t addr=(uint64_t)ptr;
-	if(addr>0x8000000000352230)
+	if(addr>MKA(hash_checked_area))
 	{
 		*ptr=value;
 		return;

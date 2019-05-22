@@ -3676,8 +3676,13 @@ void storage_ext_patches(void)
 
 void unhook_all_storage_ext(void)
 {
+#if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
 	*(uint32_t *)MKA(device_event_port_send_call)=0x4BD91004;
 	*(uint32_t *)MKA(shutdown_copy_params_call)=0x48004FBD;
+#elif defined(FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)
+	*(uint32_t *)MKA(device_event_port_send_call)=0x4BD7CAC4;
+	*(uint32_t *)MKA(shutdown_copy_params_call)=0x48005585;
+#endif
 	unhook_function_on_precall_success(storage_get_device_info_symbol, post_storage_get_device_info, 2);
 	unhook_function_with_cond_postcall(read_bdvd0_symbol, emu_read_bdvd0, 8);
 	unhook_function_with_cond_postcall(read_bdvd1_symbol, emu_read_bdvd1, 4);

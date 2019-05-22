@@ -399,12 +399,17 @@ void do_patch32(uint64_t addr, uint32_t patch)
 
 LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj, uint64_t *spu_args))
 {
-		do_patch32(MKA(patch_func8_offset1),0x7FE307B4); 
+		do_patch32(MKA(patch_func8_offset1),0x7FE307B4);
+#if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
 		do_patch32(MKA(patch_func8_offset2),0x48216FB5);
+		do_patch32(MKA(lic_patch),0x48240EED); // ignore LIC.DAT check
+#elif defined (FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)
+ 		do_patch32(MKA(patch_func8_offset2),0x4821B4BD);
+		do_patch32(MKA(lic_patch),0x482584B5); // ignore LIC.DAT check
+#endif        
 		do_patch32(MKA(user_thread_prio_patch),0x419DFF84); // for NetISO
 		do_patch32(MKA(user_thread_prio_patch2),0x419D0258); // for NetISO
 		do_patch32(MKA(ECDSA_1),0x7FE307B4);
-		do_patch32(MKA(lic_patch),0x48240EED); // ignore LIC.DAT check	
 		do_patch32(MKA(patch_func9_offset),0x419e00ac);
 		do_patch32(MKA(fix_80010009),0x419e00ac);
 		do_patch(MKA(ode_patch),0xE86900007C6307B4); // fix 0x8001002B / 80010017 errors  known as ODE patch
@@ -514,7 +519,7 @@ LV2_PATCHED_FUNCTION(int, modules_patching, (uint64_t *arg1, uint32_t *arg2))
 
 	// +4.30 -> 0x13 (exact firmware since it happens is unknown)
 	// 3.55 -> 0x29
-#if defined(FIRMWARE_4_82) || defined(FIRMWARE_4_84)
+#if defined(FIRMWARE_4_82) || defined(FIRMWARE_4_84) || defined(FIRMWARE_4_82DEX) || defined(FIRMWARE_4_84DEX)
 	if ((p[0x30/4] >> 16) == 0x13)
 #endif
 	{	
@@ -693,7 +698,7 @@ LV2_PATCHED_FUNCTION(int, modules_patching, (uint64_t *arg1, uint32_t *arg2))
 	return 0;
 }
 
-#if defined (FIRMWARE_4_82) || defined(FIRMWARE_4_84)
+#if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)
 LV2_HOOKED_FUNCTION_COND_POSTCALL_2(int, pre_modules_verification, (uint32_t *ret, uint32_t error))
 {
 /*
@@ -709,6 +714,12 @@ LV2_HOOKED_FUNCTION_COND_POSTCALL_2(int, pre_modules_verification, (uint32_t *re
 */
 	*ret = 0;
 	return 0;
+}
+
+#elif defined (FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)
+LV2_HOOKED_FUNCTION_COND_POSTCALL_2(int, pre_modules_verification, (uint32_t *ret, uint32_t error))
+{
+	return DO_POSTCALL;  //Fixes DEX ISSUE
 }
 #endif
 
