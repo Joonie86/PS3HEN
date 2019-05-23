@@ -145,6 +145,17 @@ SprxPatch explore_plugin_patches[] =
 	{ app_home_offset+4, 0x5f626476, &condition_apphome }, 
 	{ app_home_offset+8, 0x642f5053, &condition_apphome }, 
 	{ ps2_nonbw_offset, LI(0, 1), &condition_ps2softemu },
+	//// Devil303's LaunchPAD ///
+	{launchpad_offset, 0x68747470, &condition_true	},
+	{launchpad_offset+4, 0x3A2F2F77, &condition_true	},
+	{launchpad_offset+8, 0x77772E78, &condition_true	},
+	{launchpad_offset+0x0C, 0x6D626D6F, &condition_true},
+	{launchpad_offset+0x10, 0x64732E63, &condition_true	},
+	{launchpad_offset+0x14, 0x6F2F7768, &condition_true	},
+	{launchpad_offset+0x18, 0x6174735F, &condition_true	},	
+	{launchpad_offset+0x1C, 0x6E65772E, &condition_true},	
+	{launchpad_offset+0x20, 0x786D6C00, &condition_true},
+	{launchpad_offset+0x24, NULL, &condition_true},
 	{ 0 }
 };
 
@@ -213,10 +224,10 @@ SprxPatch download_plugin_patches[] =
 	// Devil303's extended download plugin patches
 	{elf_patch3_download,0x78000000 , &condition_true},	
 	{elf_patch4_download,0x78787800 , &condition_true},	
-	{elf_patch5_download,0x00000000 , &condition_true},	
-	{elf_patch5_download+8,0x00000000 , &condition_true},	
-	{elf_patch5_download+0x0C,0x00000000 , &condition_true},	
-	{elf_patch5_download+0x10,0x00000000 , &condition_true},		
+	{elf_patch5_download,NULL , &condition_true},	
+	{elf_patch5_download+8,NULL , &condition_true},	
+	{elf_patch5_download+0x0C,NULL , &condition_true},	
+	{elf_patch5_download+0x10,NULL , &condition_true},		
 	{elf_patch6_download,0x6F637465 , &condition_true},	
 	{elf_patch6_download+4,0x742D7374 , &condition_true},		
 	{elf_patch6_download+8,0x7265616D , &condition_true},	

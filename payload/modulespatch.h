@@ -73,6 +73,7 @@
 #define ps2_nonbw_offset      			0xDDDC4	// HAN support files has DEX version of this module
 //#define app_home_offset				0x250910 // Retail
 //#define ps2_nonbw_offset				0xDD9B4 // Retail
+#define launchpad_offset					0x26E9B0
 
 /* explore_category_game */
 #define ps2_nonbw_offset2				0x68324
@@ -191,6 +192,7 @@
 /* explore_plugin */
 #define app_home_offset      			0x2514C0
 #define ps2_nonbw_offset      			0xDDDC4
+#define launchpad_offset					0x26E9B0
 
 /* explore_category_game */
 #define ps2_nonbw_offset2				0x68264
