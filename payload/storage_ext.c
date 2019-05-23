@@ -3650,7 +3650,7 @@ void storage_ext_init(void)
 	event_port_connect(command_port, command_queue);
 	event_port_connect(result_port, result_queue);
 	ppu_thread_create(&dispatch_thread, dispatch_thread_entry, 0, -0x1D8, 0x4000, 0, THREAD_NAME);
-	init_mount_hdd0();
+	//init_mount_hdd0();
 }
 
 void storage_ext_patches(void)

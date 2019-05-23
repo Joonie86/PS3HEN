@@ -1565,7 +1565,7 @@ int main(void)
 	
 	load_boot_plugins();
 	load_boot_plugins_kernel();
-	//init_mount_hdd0();
+	init_mount_hdd0();
 	
 #ifdef DEBUG
 	// "Laboratory"
