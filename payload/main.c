@@ -1524,8 +1524,10 @@ static INLINE void apply_kernel_patches(void)
 	/// Adding HEN patches on init for stability ///	 -- END
 	hook_function_with_precall(get_syscall_address(801),sys_fs_open,6);
 	hook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
+	#if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)
 	hook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
 	hook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
+	#endif
 	create_syscall2(8, syscall8);
 	create_syscall2(6, sys_cfw_peek);
 	create_syscall2(7, sys_cfw_poke);

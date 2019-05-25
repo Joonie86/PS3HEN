@@ -133,8 +133,10 @@ void debug_install(void)
 	suspend_intr();
 	change_function(printf_symbol, debug_printf);
 	change_function(printfnull_symbol, debug_printf);
+#if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)
 	create_syscall2(SYS_TTY_WRITE, ttyWrite);
 	create_syscall2(SYS_CONSOLE_WRITE, consoleWrite);
+#endif	
 	resume_intr();
 }
 

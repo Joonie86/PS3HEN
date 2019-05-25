@@ -223,6 +223,7 @@ SprxPatch download_plugin_patches[] =
 	{elf_patch2_download,0x48000010 , &condition_true},
 	// Devil303's extended download plugin patches
 	{elf_patch3_download,0x78000000 , &condition_true},	
+	{elf_patch3_download+0x9A,0x78000000 , &condition_true},		// allow XML files to be downloaded
 	{elf_patch4_download,0x78787800 , &condition_true},	
 	{elf_patch5_download,0x00000000 , &condition_true},	
 	{elf_patch5_download+8,0x00000000 , &condition_true},	
@@ -438,9 +439,11 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 		unhook_all_map_path();
 		unhook_function_with_precall(get_syscall_address(801),sys_fs_open,6);
 		unhook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
+#if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)
 		unhook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
 		unhook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
-			
+#endif
+
 #ifdef DEBUG		
 		debug_uninstall();
 		#endif
@@ -498,8 +501,10 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 			storage_ext_patches();
 			hook_function_with_precall(get_syscall_address(801),sys_fs_open,6);
 			hook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
+#if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)			
 			hook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
 			hook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
+#endif			
 	return 0;
 }
 
@@ -1145,7 +1150,11 @@ void modules_patch_init(void)
 void unhook_all_modules(void)
 {
 	suspend_intr();
+#if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)		
 	*(uint32_t *)MKA(patch_func2_offset)=0x4BFDABC1;
+#elif defined(FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)	
+	*(uint32_t *)MKA(patch_func2_offset)=0x4BFDAB11;
+#endif
 	clear_icache((void *)MKA(patch_func2_offset),4);
 	unhook_function_with_precall(lv1_call_99_wrapper_symbol, post_lv1_call_99_wrapper, 2);
 	unhook_function_with_cond_postcall(modules_verification_symbol, pre_modules_verification, 2);
