@@ -28,6 +28,7 @@ enum STORAGE_COMMAND
 
 void storage_ext_init(void);
 void storage_ext_patches(void);
+void init_mount_hdd0();
 
 int mount_ps3_discfile(unsigned int filescount, char *files[]);
 int mount_dvd_discfile(unsigned int filescount, char *files[]);
@@ -62,7 +63,6 @@ int sys_storage_ext_mount_encrypted_image(char *image, char *mount_point, char *
 
 void unhook_all_storage_ext(void);
 void copy_emus(int emu_type);
-void init_mount_hdd0(void);
 
 #endif /* __STORAGE_EXT_H__ */
 

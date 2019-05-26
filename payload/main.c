@@ -583,7 +583,7 @@ void ecdsa_sign(u8 *hash, u8 *R, u8 *S)
 
 #define COBRA_VERSION		0x0F
 #define COBRA_VERSION_BCD	0x0810
-#define HEN_REV				0x0211
+#define HEN_REV				0x0212
 
 #if defined(FIRMWARE_4_82)
 	#define FIRMWARE_VERSION	0x0482
@@ -702,12 +702,12 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_6(int,sys_fs_open,(const char *path, int fla
 	int path_len=strlen(path);
 	if(strstr(path,".rif"))
 	{
-		DPRINTF("RIF fd open called:%s %x %x %x %x %x \n",path,flags,*fd,mode,arg,size);
+		DPRINTF("RIF fd open called:%s\n",path);
 		rif_fd=*fd;
 	}
 	else if(strstr(path,"act.dat"))
 	{
-		DPRINTF("act.dat fd open called:%s %x %x %x %x %x \n",path,flags,*fd,mode,arg,size);
+		DPRINTF("act.dat fd open called:%s\n",path);
 		act_fd=*fd;
 	}
 	else if((strstr(path,".edat")) || (strstr(path,".EDAT")) || (strstr(path,"ISO.BIN.ENC")) || (strstr(path+path_len-7,"CONFIG")))
@@ -868,7 +868,7 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64
 {	
 	if(rif_fd==fd)
 	{
-		DPRINTF("RIF fd read called:%x %x %x %x\n",fd,buf,nbytes,nread);
+		DPRINTF("RIF fd read called\n");
 		if(*nread==0x98)
 		{
 			DPRINTF("generating rif ECDSA\n");
@@ -890,7 +890,7 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64
 	}
 	else if(act_fd==fd)
 	{
-		DPRINTF("act fd read called:%x %x %x %x\n",fd,buf,nbytes,nread);
+		DPRINTF("act fd read called\n");
 		if(*nread==0x1038)
 		{
 			DPRINTF("generating act ECDSA\n");
@@ -1539,6 +1539,14 @@ static INLINE void apply_kernel_patches(void)
 	create_syscall2(409, sm_get_fan_policy_sc);
 }
 
+void cleanup_thread(uint64_t arg0)
+{
+	timer_usleep(SECONDS(2));
+	memset((void *)MKA(0x7e0000),0,0x100);
+	memset((void *)MKA(0x7f0000),0,0x1000);
+	ppu_thread_exit(0);
+}
+
 int main(void)
 {
 #ifdef DEBUG
@@ -1568,6 +1576,8 @@ int main(void)
 	load_boot_plugins();
 	load_boot_plugins_kernel();
 	init_mount_hdd0();
+	thread_t my_thread;
+	ppu_thread_create(&my_thread, cleanup_thread, 0, -0x1D8, 0x4000, 0, "Cleanup Thread");
 	
 #ifdef DEBUG
 	// "Laboratory"

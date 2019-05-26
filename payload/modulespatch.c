@@ -155,7 +155,7 @@ SprxPatch explore_plugin_patches[] =
 	{whatsnew_offset+0x18, 0x6174735F, &condition_true	},	
 	{whatsnew_offset+0x1C, 0x6E65772E, &condition_true},	
 	{whatsnew_offset+0x20, 0x786D6C00, &condition_true},
-	{whatsnew_offset+0x24, 0x00000000, &condition_true},
+	{whatsnew_offset+0x24, 0, &condition_true},
 	{ 0 }
 };
 
@@ -225,10 +225,10 @@ SprxPatch download_plugin_patches[] =
 	{elf_patch3_download,0x78000000 , &condition_true},	
 	{elf_patch3_download+0x9A,0x78000000 , &condition_true},		// allow XML files to be downloaded
 	{elf_patch4_download,0x78787800 , &condition_true},	
-	{elf_patch5_download,0x00000000 , &condition_true},	
-	{elf_patch5_download+8,0x00000000 , &condition_true},	
-	{elf_patch5_download+0x0C,0x00000000 , &condition_true},	
-	{elf_patch5_download+0x10,0x00000000 , &condition_true},		
+	{elf_patch5_download,0 , &condition_true},	
+	{elf_patch5_download+8,0 , &condition_true},	
+	{elf_patch5_download+0x0C,0 , &condition_true},	
+	{elf_patch5_download+0x10,0 , &condition_true},		
 	{elf_patch6_download,0x6F637465 , &condition_true},	
 	{elf_patch6_download+4,0x742D7374 , &condition_true},		
 	{elf_patch6_download+8,0x7265616D , &condition_true},	
@@ -457,13 +457,13 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 		caller_process = process->pid;
 
 		#ifdef	DEBUG
-			//DPRINTF("caller_process = %08X %s\n", caller_process, get_process_name(process));
-			//DPRINTF("saved sce hdr ptr:%p\n", saved_sce_hdr);
+			DPRINTF("caller_process = %08X %s\n", caller_process, get_process_name(process));
+			DPRINTF("saved sce hdr ptr:%p\n", saved_sce_hdr);
 		#endif
 	}
 	uint8_t is_ptr=(((uint64_t)saved_sce_hdr&0xff00000000000000)>>56); //new
 	//uint64_t is_ptr=((uint64_t)saved_sce_hdr&0xff00000000000000);
-	//DPRINTF("IS_PTR:%016llx\n",is_ptr);
+	DPRINTF("IS_PTR:%x\n",is_ptr);
 	
 	if(is_ptr==0x80) //new
 	//if(is_ptr>=0x8000000000000000)

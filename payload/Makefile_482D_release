@@ -54,7 +54,7 @@ OBJS += laboratory.o ../debug/src/debug.o ../debug/src/printf.o ../debug/src/deb
 endif
 
 all: $(OUTPUT)
-	@mv stage2.bin ../PS3HEN.BIN_482D
+	@mv stage2.bin ../stage2.bin_482D
 	@rm -f *.o *.elf *.map *.lzma ../lv2/src/*.o ../lv1/src/*.o ../debug/src/*.o
 
 objdump: $(OUTPUT)

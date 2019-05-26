@@ -6,18 +6,16 @@
 #include <lv2/patch.h>
 #include <lv1/lv1.h>
 
-#define STAGE2_FILE	"/dev_usb000/PS3HEN.BIN"
+#define STAGE2_FILE_STAT	0x8e000050
+#define STAGE2_LOCATION		0x8a110000
 
 void main(void)
 {
 	void *stage2 = NULL;
-	
 	f_desc_t f;
 	int (* func)(void);	
 
-	CellFsStat stat;
-	int fd;
-	uint64_t rs;
+	CellFsStat *stat=(CellFsStat *)STAGE2_FILE_STAT;
 
 	for (int i = 0; i < 128; i++)
 	{
@@ -26,34 +24,33 @@ void main(void)
 		
 		lv1_write_htab_entry(0, i << 3, pte0, (pte1 & 0xff0000) | 0x190);
 	}
-	
-	if (cellFsStat(STAGE2_FILE, &stat) == 0)
+
+	uint64_t size;
+	size=stat->st_size;
+	if(size)
 	{
-		if (cellFsOpen(STAGE2_FILE, CELL_FS_O_RDONLY, &fd, 0, NULL, 0) == 0)
+		size=size-0x110000;
+		uint64_t stackframe=0x4D59535441434B46ULL;
+		uint64_t base=0x8000000000640000ULL;
+		while(base<0x8000000000700000ULL)
 		{
-			stage2 = alloc(stat.st_size, 0x27);
-			if (stage2)
-			{		
-				if (cellFsRead(fd, stage2, stat.st_size, &rs) != 0)
-				{
-					dealloc(stage2, 0x27);
-					stage2 = NULL;
-				}
-					
-			}				
-			
-			cellFsClose(fd);
+			if(*(uint64_t *)base==stackframe)
+			{
+				stage2=(void*)base;
+				break;
+			}
+			base+=0x10000;
 		}
-	}	
+		if (stage2)
+		{		
+			memcpy(stage2,(void *)STAGE2_LOCATION,size);
+		}
+	}
 	
 	if (stage2)
 	{
 		uint32_t sce_bytes=0x53434500;
-		f_desc_t f1;
-		f1.addr=(void *)MKA(memcpy_symbol);
-		f1.toc=(void *)MKA(TOC);
-		int (*func1)(void *dst, void *src, int len)=(void*)&f1;
-		func1((void*)0x8a000000,&sce_bytes,4);
+		memcpy((void*)0x8a000000,&sce_bytes,4);
 		
 		f.addr = stage2;	
 		f.toc = (void *)MKA(TOC);

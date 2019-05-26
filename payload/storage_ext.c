@@ -3639,7 +3639,7 @@ int sys_storage_ext_mount_discfile_proxy(sys_event_port_t result_port, sys_event
 void storage_ext_init(void)
 {
 	thread_t dispatch_thread;
-	cellFsUtilMount("CELL_FS_IOS:BUILTIN_FLSH1", "CELL_FS_FAT", "/dev_blind", 0, 0, 0, 0, 0);
+	cellFsUtilMount("CELL_FS_IOS:BUILTIN_FLSH1", "CELL_FS_FAT", "/dev_rewrite", 0, 0, 0, 0, 0);
 	get_vsh_proc();
 	ps2emu_type = get_ps2emu_type();
 	mutex_create(&mutex, SYNC_PRIORITY, SYNC_NOT_RECURSIVE);
