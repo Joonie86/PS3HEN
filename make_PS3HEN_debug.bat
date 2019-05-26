@@ -9,10 +9,10 @@ set CYGWIN=nodosfilewarning
 
 cd stage0_file
 rm -f *.o *.elf *.self *.bin *.map ../lv1/src/*.o ../debug/src/*.o ../lv2/src/*.o
-make -j16 -f Makefile all
+make -j16 -f Makefile debug
 rm -f *.o *.elf *.self ../lv1/src/*.o ../debug/src/*.o ../lv2/src/*.o
 cd ../payload
 rm -f *.o *.elf *.self *.bin *.map ../lv1/src/*.o ../debug/src/*.o ../lv2/src/*.o
-make -j16 -f Makefile all
+make -j16 -f Makefile debug
 rm -f *.o *.elf *.self ../lv1/src/*.o ../debug/src/*.o ../lv2/src/*.o
 pause
