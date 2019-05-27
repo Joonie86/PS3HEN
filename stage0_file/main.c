@@ -6,7 +6,8 @@
 #include <lv2/patch.h>
 #include <lv1/lv1.h>
 
-#define STAGE2_FILE_STAT	0x8e000050
+//#define STAGE2_FILE_STAT	0x8e000050
+#define STAGE2_FILE_NREAD	0x8e000008
 #define STAGE2_LOCATION		0x8a110000
 
 void main(void)
@@ -15,7 +16,7 @@ void main(void)
 	f_desc_t f;
 	int (* func)(void);	
 
-	CellFsStat *stat=(CellFsStat *)STAGE2_FILE_STAT;
+//	CellFsStat *stat=(CellFsStat *)STAGE2_FILE_STAT;
 
 	for (int i = 0; i < 128; i++)
 	{
@@ -26,7 +27,8 @@ void main(void)
 	}
 
 	uint64_t size;
-	size=stat->st_size;
+//	size=stat->st_size;
+	size=*(uint64_t *)STAGE2_FILE_NREAD;
 	if(size)
 	{
 		size=size-0x110000;
