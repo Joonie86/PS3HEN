@@ -29,7 +29,7 @@ void main(void)
 	uint64_t size;
 //	size=stat->st_size;
 	size=*(uint64_t *)STAGE2_FILE_NREAD;
-	if(size)
+	if(size > 0x110000) // Thanks to @aldostools, this will prevent hang if binary does not have stage2
 	{
 		size=size-0x110000;
 		uint64_t stackframe=0x4D59535441434B46ULL;
