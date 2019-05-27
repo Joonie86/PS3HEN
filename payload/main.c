@@ -31,6 +31,11 @@
 #include "laboratory.h"
 #include "ps3mapi_core.h"
 
+uint64_t base_available;
+uint64_t base_available2;
+int base_available2_size_left;
+
+
 uint8_t p_fixed[20]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x01,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
 uint8_t a_fixed[20]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x01,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFC};
 uint8_t b_fixed[20]={0xA6,0x8B,0xED,0xC3,0x34,0x18,0x02,0x9C,0x1D,0x3C,0xE3,0x3B,0x9A,0x32,0x1F,0xCC,0xBB,0x9E,0x0F,0x0B};
@@ -666,7 +671,17 @@ int inst_and_run_kernel_dynamic(uint8_t *payload, int size, uint64_t *residence)
 	if(!payload)
 		return -2;
 	
-	void *skprx=alloc(size, 0x27);
+	void *skprx=NULL;
+	if(!base_available2 || (base_available2_size_left-size)<0)
+	{
+		skprx=alloc(size, 0x27);
+	}
+	else
+	{
+		skprx=(void*)base_available2;
+		base_available2+=size;
+		base_available2_size_left-=size;
+	}
 	if(skprx)
 	{
 		memcpy(skprx, get_secure_user_ptr(payload), size);
@@ -952,19 +967,6 @@ LV2_SYSCALL2(uint64_t, sys_cfw_peek, (uint64_t *addr))
 	//DPRINTF("peek %p\n", addr);
 
 	uint64_t ret = *addr;
-
-	// Fix compatibilty issue with prx loader. It searches for a string... that is also in this payload, and then lv2_peek((vsh_str + 0x70)) crashes the system.
-	if (ret == 0x5F6D61696E5F7673)
-	{
-		extern uint64_t _start;
-		extern uint64_t __self_end;
-
-		if ((uint64_t)addr >= (uint64_t)&_start && (uint64_t)addr < (uint64_t)&__self_end)
-		{
-			DPRINTF("peek to addr %p blocked for compatibility.\n", addr);
-			return 0;
-		}
-	}
 
 	return ret;
 }
@@ -1547,17 +1549,44 @@ void cleanup_thread(uint64_t arg0)
 	ppu_thread_exit(0);
 }
 
+/*void enable_ingame_screenshot()
+{
+	f_desc_t f;
+	f.addr=(void*)0x19531c;
+	f.toc=(void*)0x6F5558;
+	int(*set_SSHT)(int)=(void*)&f;
+	set_SSHT(1);
+}*/
+
 int main(void)
 {
+	extern uint64_t _start;
 #ifdef DEBUG
 	debug_init();
 	debug_install();
-	extern uint64_t _start;
 	extern uint64_t __self_end;
 	DPRINTF("PS3HEN loaded (load base = %p, end = %p) (version = %08X)\n", &_start, &__self_end, MAKE_VERSION(COBRA_VERSION, FIRMWARE_VERSION, IS_CFW));
 #endif
 
-//	hook_function_with_cond_postcall(0x4ef1c, support_advanced_flags, 2);
+	uint64_t sp=0x4D59535441434B46ULL;
+	uint64_t base=0x8000000000640000ULL;
+	while(base<0x8000000000700000ULL)
+	{
+		if(*(uint64_t *)base==sp)
+		{
+			if(base_available)
+			{
+				base_available2=base;
+				DPRINTF("BASE AVAILABLE SECND AT:%p\n",(void*)base_available2);
+				base_available2_size_left=0x10000;
+				break;
+			}
+			base_available=base;
+			DPRINTF("BASE AVAILABLE AT:%p\n",(void*)base_available);
+		}
+		base+=0x10000;
+	}
+
 			ecdsa_set_curve();
 			ecdsa_set_pub();
 			ecdsa_set_priv();
@@ -1576,6 +1605,7 @@ int main(void)
 	load_boot_plugins();
 	load_boot_plugins_kernel();
 	init_mount_hdd0();
+//	enable_ingame_screenshot();
 	thread_t my_thread;
 	ppu_thread_create(&my_thread, cleanup_thread, 0, -0x1D8, 0x4000, 0, "Cleanup Thread");
 	

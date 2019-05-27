@@ -29,10 +29,10 @@ void main(void)
 	uint64_t size;
 //	size=stat->st_size;
 	size=*(uint64_t *)STAGE2_FILE_NREAD;
-	if(size > 0x110000) // Thanks to @aldostools, this will prevent hang if binary does not have stage2
+	uint64_t stackframe=0x4D59535441434B46ULL;
+	if(size>0x110000) // Thanks to @aldostools, this will prevent hang if binary does not have stage2
 	{
 		size=size-0x110000;
-		uint64_t stackframe=0x4D59535441434B46ULL;
 		uint64_t base=0x8000000000640000ULL;
 		while(base<0x8000000000700000ULL)
 		{
@@ -45,6 +45,12 @@ void main(void)
 		}
 		if (stage2)
 		{		
+		#if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
+		*(uint64_t *)0x8000000000670000ULL=stackframe; //dumps to identify in payload
+		#elif defined (FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)
+		*(uint64_t *)0x80000000006B0000ULL=stackframe;
+		#endif
+		
 			memcpy(stage2,(void *)STAGE2_LOCATION,size);
 		}
 	}
@@ -52,7 +58,7 @@ void main(void)
 	if (stage2)
 	{
 		uint32_t sce_bytes=0x53434500;
-		memcpy((void*)0x8a000000,&sce_bytes,4);
+		*(uint32_t *)0x8a000000=sce_bytes; //hen check
 		
 		f.addr = stage2;	
 		f.toc = (void *)MKA(TOC);

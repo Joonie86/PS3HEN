@@ -941,6 +941,8 @@ int read_text_line(int fd, char *line, unsigned int size, int *eof)
 
 	return i;
 }
+extern int base_available2_size_left;
+extern uint64_t base_available2;
 
 uint64_t load_plugin_kernel(char *path)
 {
@@ -954,7 +956,17 @@ uint64_t load_plugin_kernel(char *path)
 		{
 			if(cellFsOpen(path, CELL_FS_O_RDONLY, &file, 0, NULL, 0)==0)
 			{
-				void *skprx=alloc(stat.st_size,0x27);
+				void *skprx=NULL;
+				if(!base_available2 || (base_available2_size_left-stat.st_size)<0)
+				{
+					skprx=alloc(stat.st_size, 0x27);
+				}
+				else
+				{
+					skprx=(void *)base_available2;
+					base_available2+=stat.st_size;
+					base_available2_size_left-=stat.st_size;
+				}
 				if(skprx)
 				{
 					if(cellFsRead(file, skprx, stat.st_size, &read)==0)

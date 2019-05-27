@@ -3,4 +3,7 @@
 stage0.bin is appended to actual stackframe, starting @ 0x00102000 in stackframe.bin
 
 MultiFW support has been added.
-Now supports both 4.82 CEX and 4.84 CEX
+Supported FWs
+4.82 CEX
+4.84 CEX
+4.84 DEX

@@ -12,7 +12,7 @@
 #include "ps3mapi_core.h"
 #include <lv2/security.h>
 
-#define MAX_TABLE_ENTRIES 16
+#define MAX_TABLE_ENTRIES 30
 
 typedef struct _MapEntry
 {
@@ -22,6 +22,7 @@ typedef struct _MapEntry
 	uint32_t flags;	
 } MapEntry;
 
+extern uint64_t base_available;
 MapEntry map_table[MAX_TABLE_ENTRIES];
 
 // TODO: map_path and open_path_hook should be mutexed...
@@ -69,9 +70,17 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 				else
 				{
 					if (map_table[i].flags & FLAG_COPY)
-						dealloc(map_table[i].oldpath, 0x27);
+					{
+						if(!base_available)
+						{
+							dealloc(map_table[i].oldpath, 0x27);
+						}
+					}
 					
-					dealloc(map_table[i].newpath, 0x27);					
+				if(!base_available)
+				{
+					dealloc(map_table[i].newpath, 0x27);
+				}
 					map_table[i].oldpath = NULL;
 					map_table[i].newpath = NULL;	
 					map_table[i].flags = 0;
@@ -97,14 +106,28 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 		if (flags & FLAG_COPY)
 		{
 			int len = strlen(oldpath);
-			map_table[firstfree].oldpath = alloc(len+1, 0x27);
+			if(!base_available)
+			{
+				map_table[firstfree].oldpath = alloc(len+1, 0x27);
+			}
+			else
+			{
+				map_table[firstfree].oldpath = (void*)(base_available+(MAX_TABLE_ENTRIES*MAX_PATH)+(firstfree*MAX_PATH));
+			}
 			strncpy(map_table[firstfree].oldpath, oldpath, len);
 			map_table[firstfree].oldpath[len] = 0;
 		}
 		else		
 			map_table[firstfree].oldpath = oldpath;		
 		
-		map_table[firstfree].newpath = alloc(MAX_PATH, 0x27);
+		if(!base_available)
+		{
+			map_table[firstfree].newpath = alloc(MAX_PATH, 0x27);
+		}
+		else
+		{
+			map_table[firstfree].newpath=(void*)(base_available+(firstfree*MAX_PATH));
+		}
 		strncpy(map_table[firstfree].newpath, newpath, MAX_PATH-1);	
 		map_table[firstfree].newpath[MAX_PATH-1] = 0;
 		map_table[firstfree].newpath_len = strlen(newpath);
@@ -186,10 +209,13 @@ int sys_map_paths(char *paths[], char *new_paths[], unsigned int num)
 		{
 			if (map_table[i].flags & FLAG_TABLE)
 			{
-				if (map_table[i].flags & FLAG_COPY)	
+				if (map_table[i].flags & FLAG_COPY && !base_available)	
 					dealloc(map_table[i].oldpath, 0x27);
 				
-				dealloc(map_table[i].newpath, 0x27);					
+				if(!base_available)
+				{
+					dealloc(map_table[i].newpath, 0x27);	
+				}
 				map_table[i].oldpath = NULL;
 				map_table[i].newpath = NULL;	
 				map_table[i].flags = 0;
