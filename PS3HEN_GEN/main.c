@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <inttypes.h>
 
 int main(int argc, char **argv)
 {
@@ -25,6 +26,7 @@ int main(int argc, char **argv)
 	
 	struct stat buffer;
 	int status;
+	uint32_t truncate_len=0x110000;
 
 	status = stat(argv[1], &buffer);
 	if(status == 0)
@@ -36,6 +38,7 @@ int main(int argc, char **argv)
 			fclose(stage2);
 			fseek(sp,0x110000,SEEK_SET);
 			fwrite(stage2_buf,buffer.st_size,1,sp);
+			truncate_len+=buffer.st_size;
 			free(stage2_buf);
 			if(stat(argv[3],&buffer)==0)
 			{
@@ -48,7 +51,8 @@ int main(int argc, char **argv)
 			}
 		}
 	}
-	printf("DONE!\n");
+	_chsize( fileno(sp), truncate_len);
 	fclose(sp);
+	printf("DONE!\n");
 	return 0;
 }
