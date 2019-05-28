@@ -19,6 +19,7 @@ typedef struct _MapEntry
 	char *oldpath;
 	char *newpath;
 	int  newpath_len;
+	int  oldpath_len;
 	uint32_t flags;	
 } MapEntry;
 
@@ -35,6 +36,8 @@ void map_first_slot(char *old, char *newp)
 	map_table[0].oldpath=old;
 	map_table[0].newpath=newp;
 	map_table[0].newpath_len=strlen(newp);
+	map_table[0].oldpath_len = strlen(old);
+	map_table[0].flags = 0;
 	return;
 }
 
@@ -71,7 +74,9 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 				else
 				{
 					map_table[i].oldpath = NULL;
-					map_table[i].newpath = NULL;	
+					map_table[i].newpath = NULL;
+					map_table[i].oldpath_len = 0;
+					map_table[i].newpath_len = 0;					
 					map_table[i].flags = 0;
 				}
 				
@@ -91,10 +96,11 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 			return 0;
 		
 		map_table[firstfree].flags = flags;
+		int len = strlen(oldpath);
+		map_table[firstfree].oldpath_len=len;
 		
 		if (flags & FLAG_COPY)
 		{
-			int len = strlen(oldpath);
 			map_table[firstfree].oldpath = (void*)(pathbuf+(MAX_TABLE_ENTRIES*MAX_PATH)+(firstfree*MAX_PATH));
 			strncpy(map_table[firstfree].oldpath, oldpath, len);
 			map_table[firstfree].oldpath[len] = 0;
@@ -148,6 +154,20 @@ int map_path_user(char *oldpath, char *newpath, uint32_t flags)
 		dealloc(newp, 0x27);
 	
 	return ret;
+}
+
+int get_map_path(unsigned int num, char *path, char *new_path)
+{
+	if(num > MAX_TABLE_ENTRIES) return MAX_TABLE_ENTRIES;
+
+	if(map_table[num].oldpath_len == 0 || map_table[num].newpath_len == 0 || !map_table[num].newpath || !map_table[num].oldpath || !path) return -1;
+
+	copy_to_user(&path, get_secure_user_ptr(map_table[num].oldpath), map_table[num].oldpath_len);
+
+	if(!new_path) return 0;
+	copy_to_user(&new_path, get_secure_user_ptr(map_table[num].newpath), map_table[num].newpath_len);
+
+	return 0;
 }
 
 LV2_SYSCALL2(int, sys_map_path, (char *oldpath, char *newpath))
@@ -510,9 +530,10 @@ LV2_HOOKED_FUNCTION_POSTCALL_2(void, open_path_hook, (char *path0, int mode))
 			sprintf(buf,"/dev_hdd0/exdata/%.36s.rap",content_id);
 			path_chk=cellFsStat(buf,&stat);
 		}
-		if(path_chk==0)
+		uint8_t is_ps2_classic = !strncmp(content_id, "2P0001-PS2U10000_00-0000111122223333", 0x24);
+		if(path_chk==0 || is_ps2_classic)
 		{
-			uint8_t rap[0x10];
+			uint8_t rap[0x10] = {0xF5, 0xDE, 0xCA, 0xBB, 0x09, 0x88, 0x4F, 0xF4, 0x02, 0xD4, 0x12, 0x3C, 0x25, 0x01, 0x71, 0xD9};
 			uint8_t idps[0x10];
 			char *act_path;
 			page_allocate_auto(NULL, 0x60, 0x2F, (void *)&act_path);
@@ -529,10 +550,14 @@ LV2_HOOKED_FUNCTION_POSTCALL_2(void, open_path_hook, (char *path0, int mode))
 			page_allocate_auto(NULL, 0x1038, 0x2F, (void *)&act_dat);
 			int fd;
 			uint64_t nread;
-			if(cellFsOpen(buf, CELL_FS_O_RDONLY, &fd, 0, NULL, 0)==0)
+
+			if(!is_ps2_classic)
 			{
-				cellFsRead(fd, rap, 0x10, &nread);
-				cellFsClose(fd);
+				if(cellFsOpen(buf, CELL_FS_O_RDONLY, &fd, 0, NULL, 0)==0)
+				{
+					cellFsRead(fd, rap, 0x10, &nread);
+					cellFsClose(fd);
+				}
 			}
 			
 			if(cellFsOpen(act_path, CELL_FS_O_RDONLY, &fd, 0, NULL, 0)==0)

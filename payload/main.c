@@ -865,6 +865,8 @@ LV2_HOOKED_FUNCTION_COND_POSTCALL_3(int,read_eeprom_by_offset,(uint32_t offset, 
 	return DO_POSTCALL;
 }
 
+uint8_t tmp_buf_reactpsn[0x1038];
+
 LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64_t nbytes, uint64_t *nread))
 {	
 	if(rif_fd==fd)
@@ -873,18 +875,15 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64
 		if(*nread==0x98)
 		{
 			DPRINTF("generating rif ECDSA\n");
-			uint8_t *buf1;
-			page_allocate_auto(NULL, 0x98, 0x2F, (void*)&buf1);
-			memcpy(buf1,buf,0x98);
+			memcpy(tmp_buf_reactpsn,buf,0x98);
 			uint8_t sha1_digest[20];
-			sha1(buf1, 0x70,sha1_digest);
+			sha1(tmp_buf_reactpsn, 0x70,sha1_digest);
 			uint8_t R[0x15];
 			uint8_t S[0x15];
 			ecdsa_sign(sha1_digest, R, S);
-			memcpy(buf1+0x70, R+1, 0x14);
-			memcpy(buf1+0x70+0x14, S+1, 0x14);
-			memcpy(buf+0x70,buf1+0x70,0x28);
-			page_free(NULL, buf1, 0x2F);
+			memcpy(tmp_buf_reactpsn+0x70, R+1, 0x14);
+			memcpy(tmp_buf_reactpsn+0x70+0x14, S+1, 0x14);
+			memcpy(buf+0x70,tmp_buf_reactpsn+0x70,0x28);
 			rif_fd=0;
 //			DPRINTF("R:%015x\nS:%015x\n",R,S);
 		}
@@ -895,18 +894,15 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64
 		if(*nread==0x1038)
 		{
 			DPRINTF("generating act ECDSA\n");
-			uint8_t *buf1;
-			page_allocate_auto(NULL, 0x1038, 0x2F, (void*)&buf1);
-			memcpy(buf1,buf,0x1038);
+			memcpy(tmp_buf_reactpsn,buf,0x1038);
 			uint8_t sha1_digest[20];
-			sha1(buf1, 0x1010,sha1_digest);
+			sha1(tmp_buf_reactpsn, 0x1010,sha1_digest);
 			uint8_t R[0x15];
 			uint8_t S[0x15];
 			ecdsa_sign(sha1_digest, R, S);
-			memcpy(buf1+0x1010, R+1, 0x14);
-			memcpy(buf1+0x1010+0x14, S+1, 0x14);
-			memcpy(buf+0x1010,buf1+0x1010,0x28);
-			page_free(NULL, buf1, 0x2F);
+			memcpy(tmp_buf_reactpsn+0x1010, R+1, 0x14);
+			memcpy(tmp_buf_reactpsn+0x1010+0x14, S+1, 0x14);
+			memcpy(buf+0x1010,tmp_buf_reactpsn+0x1010,0x28);
 			act_fd=0;
 //			DPRINTF("R:%015x\nS:%015x\n",R,S);
 		}
@@ -916,18 +912,15 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64
 		if(*nread==0x100)
 		{
 			DPRINTF("generating misc ECDSA\n");
-			uint8_t *buf1;
-			page_allocate_auto(NULL, 0x100, 0x2F, (void*)&buf1);
-			memcpy(buf1,buf,0x100);
+			memcpy(tmp_buf_reactpsn,buf,0x100);
 			uint8_t sha1_digest[20];
-			sha1(buf1, 0xd8,sha1_digest);
+			sha1(tmp_buf_reactpsn, 0xd8,sha1_digest);
 			uint8_t R[0x15];
 			uint8_t S[0x15];
 			ecdsa_sign(sha1_digest, R, S);
-			memcpy(buf1+0xd8, R+1, 0x14);
-			memcpy(buf1+0xd8+0x14, S+1, 0x14);
-			memcpy(buf+0xd8,buf1+0xd8,0x28);
-			page_free(NULL, buf1, 0x2F);
+			memcpy(tmp_buf_reactpsn+0xd8, R+1, 0x14);
+			memcpy(tmp_buf_reactpsn+0xd8+0x14, S+1, 0x14);
+			memcpy(buf+0xd8,tmp_buf_reactpsn+0xd8,0x28);
 			misc_fd=0;
 		}
 	}
@@ -1416,6 +1409,10 @@ LV2_SYSCALL2(int64_t, syscall8, (uint64_t function, uint64_t param1, uint64_t pa
 
 		case SYSCALL8_OPCODE_SEND_POWEROFF_EVENT:
 			return sys_sm_ext_send_poweroff_event((int)param1);
+		break;
+		
+		case SYSCALL8_OPCODE_GET_MAP_PATH:
+			return get_map_path((unsigned int)param1, (char *)param2, (char *)param3);
 		break;
 
 #ifdef DEBUG
