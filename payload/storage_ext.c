@@ -960,117 +960,6 @@ uint32_t find_file_sector(uint8_t *buf, char *file)
 	return 0;
 }
 
-int process_get_psx_video_mode(void)
-{
-	int ret = -1;
-
-	if (effective_disctype == DEVICE_TYPE_PSX_CD)
-	{
-		char *buf, *bbuf, *p, *dma;
-		char *exe_path;
-
-		bbuf = alloc(4096, 0x27);
-
-		page_allocate_auto(NULL, 4096, 0x2F, (void **)&dma);
-		exe_path = alloc(140, 0x27);
-
-		if (read_psx_sector(dma, bbuf, 0x10) == 0 && read_psx_sector(dma, bbuf+2048, *(uint32_t *)&bbuf[0x9C+6]) == 0)
-		{
-			uint32_t sector = find_file_sector((uint8_t *)bbuf+2048, "SYSTEM.CNF;1");
-
-			buf = alloc(4096, 0x27);
-
-			if (sector != 0 && read_psx_sector(dma, buf, sector) == 0)
-			{
-				p = strstr(buf, "cdrom");
-				if (!p) p = strstr(buf, "CDROM");
-
-				if (p)
-				{
-					p += 5;
-
-					while (*p != 0 && !isalpha(*p)) p++;
-
-					if (*p != 0)
-					{
-						int i = 0;
-
-						memset(exe_path, 0, 140);
-
-						while (*p >= ' ' && *p != ';' && i < 117)
-						{
-							if(*p=='\\' || *p=='/') {i = 0; memset(exe_path, 0, 140);} else {exe_path[i] = *p; i++;}
-							p++;
-						}
-
-						strcat(exe_path, ";1");
-
-						#ifdef DEBUG
-						DPRINTF("PSX EXE: %s\n", exe_path);
-						#endif
-
-						while(1)
-						{
-							p = strstr(exe_path, "SLES_"); if(p) {ret = 1; break;}
-							p = strstr(exe_path, "SCES_"); if(p) {ret = 1; break;}
-
-							p = strstr(exe_path, "SLUS_"); if(p) {ret = 0; break;}
-							p = strstr(exe_path, "SCUS_"); if(p) {ret = 0; break;}
-
-							p = strstr(exe_path, "SLPM_"); if(p) {ret = 0; break;}
-							p = strstr(exe_path, "SLPS_"); if(p) {ret = 0; break;}
-							p = strstr(exe_path, "SCPM_"); if(p) {ret = 0; break;}
-							p = strstr(exe_path, "SCPS_"); if(p) {ret = 0; break;}
-							p = strstr(exe_path, "SIPS_"); if(p) {ret = 0; break;}
-
-							p = strstr(exe_path, "SCED_"); if(p) {ret = 1; break;}
-							p = strstr(exe_path, "SLED_"); if(p) {ret = 1; break;}
-
-							p = strstr(exe_path, "SCUD_"); if(p) {ret = 0; break;}
-							p = strstr(exe_path, "SLUD_"); if(p) {ret = 0; break;}
-
-							p = strstr(exe_path, "PAPX_"); if(p) {ret = 0; break;}
-							p = strstr(exe_path, "PBPX_"); if(p) {ret = 0; break;}
-							p = strstr(exe_path, "PCPX_"); if(p) {ret = 0; break;}
-
-							if(ret == -1)
-							{
-								sector = find_file_sector((uint8_t *)bbuf+2048, exe_path);
-
-								if (sector != 0 && read_psx_sector(dma, buf, sector) == 0)
-								{
-									if (strncmp(buf+0x71, "North America", 13) == 0 || strncmp(buf+0x71, "Japan", 5) == 0)
-									{
-										ret = 0;
-									}
-									else if (strncmp(buf+0x71, "Europe", 6) == 0)
-									{
-										ret = 1;
-									}
-								}
-							}
-
-							break;
-						}
-					}
-				}
-			}
-		   dealloc(buf, 0x27);
-		}
-
-		#ifdef DEBUG
-		if(ret == 0) DPRINTF("NTSC\n");
-		if(ret == 1) DPRINTF("PAL\n");
-		#endif
-
-		dealloc(exe_path, 0x27);
-		dealloc(bbuf, 0x27);
-		page_free(NULL, dma, 0x2F);
-	}
-
-	return ret;
-}
-
 void dispatch_thread_entry(uint64_t arg)
 {
 	int ret;
@@ -1119,10 +1008,6 @@ void dispatch_thread_entry(uint64_t arg)
 
 			case CMD_FAKE_STORAGE_EVENT:
 				cmd_result = process_fake_storage_event_cmd((FakeStorageEventCmd *)event.data2);
-			break;
-
-			case CMD_GET_PSX_VIDEO_MODE:
-				cmd_result = process_get_psx_video_mode();
 			break;
 		}
 
@@ -2200,20 +2085,6 @@ int process_cd_iso_scsi_cmd(uint8_t *indata, uint64_t inlen, uint8_t *outdata, u
 	}
 
 	return 0;
-}
-
-static INLINE int get_psx_video_mode(void)
-{
-	int ret = -1;
-	event_t event;
-
-	event_port_send(command_port, CMD_GET_PSX_VIDEO_MODE, 0, 0);
-	if (event_queue_receive(result_queue, &event, 0) == 0)
-	{
-		ret = (int)(int64_t)event.data1;
-	}
-
-	return ret;
 }
 
 

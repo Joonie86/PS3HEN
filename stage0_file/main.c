@@ -26,10 +26,16 @@ void main(void)
 		lv1_write_htab_entry(0, i << 3, pte0, (pte1 & 0xff0000) | 0x190);
 	}
 
+	uint64_t stackframe=0x4D59535441434B46ULL;
+	#if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
+	*(uint64_t *)0x8000000000670000ULL=stackframe; //dumps to identify in payload
+	#elif defined (FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)
+	*(uint64_t *)0x80000000006B0000ULL=stackframe;
+	#endif
+	
 	uint64_t size;
 //	size=stat->st_size;
 	size=*(uint64_t *)STAGE2_FILE_NREAD;
-	uint64_t stackframe=0x4D59535441434B46ULL;
 	if(size>0x110000) // Thanks to @aldostools, this will prevent hang if binary does not have stage2
 	{
 		size=size-0x110000;
@@ -45,12 +51,6 @@ void main(void)
 		}
 		if (stage2)
 		{		
-		#if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
-		*(uint64_t *)0x8000000000670000ULL=stackframe; //dumps to identify in payload
-		#elif defined (FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)
-		*(uint64_t *)0x80000000006B0000ULL=stackframe;
-		#endif
-		
 			memcpy(stage2,(void *)STAGE2_LOCATION,size);
 		}
 	}

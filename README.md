@@ -1,6 +1,6 @@
 # PS3HEN 2.1.2
 
-stage0.bin is appended to actual stackframe, starting @ 0x00102000 in stackframe.bin
+stage0.bin is appended to actual stackframe
 
 MultiFW support has been added.
 [Supported Firmwares]

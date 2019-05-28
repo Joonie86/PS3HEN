@@ -951,7 +951,10 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64
 
 int unload_plugin_kernel(uint64_t residence)
 {
-	dealloc((void *)residence, 0x27);
+	if(!base_available2)
+	{
+		dealloc((void *)residence, 0x27);
+	}
 	return 0;
 }
 
@@ -1560,10 +1563,10 @@ void cleanup_thread(uint64_t arg0)
 
 int main(void)
 {
-	extern uint64_t _start;
 #ifdef DEBUG
 	debug_init();
 	debug_install();
+	extern uint64_t _start;
 	extern uint64_t __self_end;
 	DPRINTF("PS3HEN loaded (load base = %p, end = %p) (version = %08X)\n", &_start, &__self_end, MAKE_VERSION(COBRA_VERSION, FIRMWARE_VERSION, IS_CFW));
 #endif

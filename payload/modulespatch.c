@@ -471,7 +471,7 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 		if((*(uint64_t *)(saved_sce_hdr+0x48)>=0x200) || (*(uint64_t *)(saved_sce_hdr+0x48)==0x130))
 		{
 			DPRINTF("SELF loading!\n");
-			timer_usleep(700000);
+			timer_usleep(625000);
 		}
 	}
 			do_patch32(MKA(patch_func8_offset1),0x38600000); 

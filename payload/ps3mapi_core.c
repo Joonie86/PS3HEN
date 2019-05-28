@@ -182,6 +182,9 @@ int ps3mapi_get_process_mem(process_id_t pid, uint64_t addr, char *buf, int size
 
 #define MAX_MODULES 128
 
+sys_prx_id_t list[MAX_MODULES];
+uint32_t unk[MAX_MODULES];
+
 int ps3mapi_get_all_process_modules_prx_id(process_id_t pid, sys_prx_id_t *prx_id_list)
 {
 	process_t process = ps3mapi_internal_get_process_by_pid(pid);
@@ -190,18 +193,7 @@ int ps3mapi_get_all_process_modules_prx_id(process_id_t pid, sys_prx_id_t *prx_i
 		return ESRCH;
 
 	sys_prx_id_t tmp_prx_id_list[MAX_MODULES];
-	sys_prx_id_t *list;
-	uint32_t *unk;
 	uint32_t n, unk2;
-	list = alloc(MAX_MODULES*sizeof(sys_prx_module_info_t), 0x35);
-
-	if (!list) 
-		return ENOMEM;
-
-	unk = alloc(MAX_MODULES*sizeof(uint32_t), 0x35);
-
-	if (!unk) {dealloc(list, 0x35); 
-		return ENOMEM;}
 
 	int ret = prx_get_module_list(process, list, unk, MAX_MODULES, &n, &unk2);
 	if (ret == SUCCEEDED)
@@ -217,8 +209,6 @@ int ps3mapi_get_all_process_modules_prx_id(process_id_t pid, sys_prx_id_t *prx_i
 		ret =copy_to_user(&tmp_prx_id_list, get_secure_user_ptr(prx_id_list), sizeof(tmp_prx_id_list));
 	}
 
-	dealloc(list, 0x35);
-	dealloc(unk, 0x35);
 	return ret;
 }
 
