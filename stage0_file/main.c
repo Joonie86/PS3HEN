@@ -39,7 +39,7 @@ void main(void)
 	if(size>0x110000) // Thanks to @aldostools, this will prevent hang if binary does not have stage2
 	{
 		size=size-0x110000;
-		uint64_t base=0x8000000000640000ULL;
+		uint64_t base=0x8000000000630000ULL;
 		while(base<0x8000000000700000ULL)
 		{
 			if(*(uint64_t *)base==stackframe)

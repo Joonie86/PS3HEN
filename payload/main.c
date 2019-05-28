@@ -31,9 +31,8 @@
 #include "laboratory.h"
 #include "ps3mapi_core.h"
 
-uint64_t base_available;
-uint64_t base_available2;
-int base_available2_size_left;
+uint8_t base_available2[64*1024];
+int base_available2_current_pos;
 
 
 uint8_t p_fixed[20]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x01,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
@@ -672,16 +671,10 @@ int inst_and_run_kernel_dynamic(uint8_t *payload, int size, uint64_t *residence)
 		return -2;
 	
 	void *skprx=NULL;
-	if(!base_available2 || (base_available2_size_left-size)<0)
-	{
-		skprx=alloc(size, 0x27);
-	}
-	else
-	{
-		skprx=(void*)base_available2;
-		base_available2+=size;
-		base_available2_size_left-=size;
-	}
+
+	skprx=(void*)(base_available2+base_available2_current_pos);
+	base_available2_current_pos+=size;
+
 	if(skprx)
 	{
 		memcpy(skprx, get_secure_user_ptr(payload), size);
@@ -731,15 +724,12 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_6(int,sys_fs_open,(const char *path, int fla
 	}
 	return 0;
 }
-
+SHACtx ctx_sha;
 int sha1(uint8_t *buf, uint64_t size, uint8_t *out)
 {
-	SHACtx *ctx;
-	page_allocate_auto(NULL, 0x100, 0x2F, (void *)&ctx);
-	sha1_init(ctx);
-	sha1_update(ctx,buf,size);
-	sha1_final(out,ctx);
-	page_free(NULL, (void *)ctx, 0x2F);
+	sha1_init(&ctx_sha);
+	sha1_update(&ctx_sha,buf,size);
+	sha1_final(out,&ctx_sha);
 	DPRINT_HEX(out, 20);
 	return 0;
 }
@@ -758,25 +748,24 @@ int sha1(uint8_t *buf, uint64_t size, uint8_t *out)
 * @param out Digest output
 * @param t   Size of digest output
 */
+SHACtx tctx;
+SHACtx ictx;
+SHACtx octx;
 void hmac_sha1(const uint8_t *k,  /* secret key */
         size_t lk,       /* length of the key in bytes */
         const uint8_t *d,  /* data */
         size_t ld,       /* length of data in bytes */
         uint8_t *out)      /* output buffer */ {
-    SHACtx *ictx=alloc(0x100,0x27);
-	SHACtx *octx=alloc(0x100,0x27);
     uint8_t isha[SHA_DIGEST_LENGTH];
     uint8_t key[SHA_DIGEST_LENGTH];
     uint8_t buf[SHA_BLOCKSIZE];
     size_t i;
 
     if (lk > SHA_BLOCKSIZE) {
-        SHACtx *tctx=alloc(0x100,0x27);
 
-        sha1_init(tctx);
-        sha1_update(tctx, k, lk);
-        sha1_final(key, tctx);
-		dealloc(tctx,0x27);
+        sha1_init(&tctx);
+        sha1_update(&tctx, k, lk);
+        sha1_final(key, &tctx);
 
         k = key;
         lk = SHA_DIGEST_LENGTH;
@@ -784,7 +773,7 @@ void hmac_sha1(const uint8_t *k,  /* secret key */
 
     /**** Inner Digest ****/
 
-    sha1_init(ictx);
+    sha1_init(&ictx);
 
     /* Pad the key for inner digest */
     for (i = 0; i < lk; ++i) {
@@ -794,14 +783,14 @@ void hmac_sha1(const uint8_t *k,  /* secret key */
         buf[i] = 0x36;
     }
 
-    sha1_update(ictx, buf, SHA_BLOCKSIZE);
-    sha1_update(ictx, d, ld);
+    sha1_update(&ictx, buf, SHA_BLOCKSIZE);
+    sha1_update(&ictx, d, ld);
 
-    sha1_final(isha, ictx);
+    sha1_final(isha, &ictx);
 
     /**** Outer Digest ****/
 
-    sha1_init(octx);
+    sha1_init(&octx);
 
     /* Pad the key for outter digest */
 
@@ -812,13 +801,10 @@ void hmac_sha1(const uint8_t *k,  /* secret key */
         buf[i] = 0x5c;
     }
 
-    sha1_update(octx, buf, SHA_BLOCKSIZE);
-    sha1_update(octx, isha, SHA_DIGEST_LENGTH);
+    sha1_update(&octx, buf, SHA_BLOCKSIZE);
+    sha1_update(&octx, isha, SHA_DIGEST_LENGTH);
 
-    sha1_final(out, octx);
-
-	dealloc(ictx,0x27);
-	dealloc(octx,0x27);
+    sha1_final(out, &octx);
 }
 
 uint8_t erk[0x20] = {
@@ -951,10 +937,6 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64
 
 int unload_plugin_kernel(uint64_t residence)
 {
-	if(!base_available2)
-	{
-		dealloc((void *)residence, 0x27);
-	}
 	return 0;
 }
 
@@ -1570,25 +1552,7 @@ int main(void)
 	extern uint64_t __self_end;
 	DPRINTF("PS3HEN loaded (load base = %p, end = %p) (version = %08X)\n", &_start, &__self_end, MAKE_VERSION(COBRA_VERSION, FIRMWARE_VERSION, IS_CFW));
 #endif
-
-	uint64_t sp=0x4D59535441434B46ULL;
-	uint64_t base=0x8000000000640000ULL;
-	while(base<0x8000000000700000ULL)
-	{
-		if(*(uint64_t *)base==sp)
-		{
-			if(base_available)
-			{
-				base_available2=base;
-				DPRINTF("BASE AVAILABLE SECND AT:%p\n",(void*)base_available2);
-				base_available2_size_left=0x10000;
-				break;
-			}
-			base_available=base;
-			DPRINTF("BASE AVAILABLE AT:%p\n",(void*)base_available);
-		}
-		base+=0x10000;
-	}
+	base_available2_current_pos=0;
 
 			ecdsa_set_curve();
 			ecdsa_set_pub();

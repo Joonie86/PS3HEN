@@ -22,12 +22,13 @@ typedef struct _MapEntry
 	uint32_t flags;	
 } MapEntry;
 
-extern uint64_t base_available;
 MapEntry map_table[MAX_TABLE_ENTRIES];
 
 // TODO: map_path and open_path_hook should be mutexed...
 
 uint8_t photo_gui = 1;
+
+uint8_t pathbuf[(MAX_TABLE_ENTRIES*2)*(MAX_PATH)];
 
 void map_first_slot(char *old, char *newp)
 {
@@ -69,18 +70,6 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 				}
 				else
 				{
-					if (map_table[i].flags & FLAG_COPY)
-					{
-						if(!base_available)
-						{
-							dealloc(map_table[i].oldpath, 0x27);
-						}
-					}
-					
-				if(!base_available)
-				{
-					dealloc(map_table[i].newpath, 0x27);
-				}
 					map_table[i].oldpath = NULL;
 					map_table[i].newpath = NULL;	
 					map_table[i].flags = 0;
@@ -106,28 +95,17 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 		if (flags & FLAG_COPY)
 		{
 			int len = strlen(oldpath);
-			if(!base_available)
-			{
-				map_table[firstfree].oldpath = alloc(len+1, 0x27);
-			}
-			else
-			{
-				map_table[firstfree].oldpath = (void*)(base_available+(MAX_TABLE_ENTRIES*MAX_PATH)+(firstfree*MAX_PATH));
-			}
+			map_table[firstfree].oldpath = (void*)(pathbuf+(MAX_TABLE_ENTRIES*MAX_PATH)+(firstfree*MAX_PATH));
 			strncpy(map_table[firstfree].oldpath, oldpath, len);
 			map_table[firstfree].oldpath[len] = 0;
 		}
 		else		
-			map_table[firstfree].oldpath = oldpath;		
+		{
+			map_table[firstfree].oldpath = oldpath;	
+		}			
 		
-		if(!base_available)
-		{
-			map_table[firstfree].newpath = alloc(MAX_PATH, 0x27);
-		}
-		else
-		{
-			map_table[firstfree].newpath=(void*)(base_available+(firstfree*MAX_PATH));
-		}
+
+		map_table[firstfree].newpath=(void*)(pathbuf+(firstfree*MAX_PATH));
 		strncpy(map_table[firstfree].newpath, newpath, MAX_PATH-1);	
 		map_table[firstfree].newpath[MAX_PATH-1] = 0;
 		map_table[firstfree].newpath_len = strlen(newpath);
@@ -209,13 +187,6 @@ int sys_map_paths(char *paths[], char *new_paths[], unsigned int num)
 		{
 			if (map_table[i].flags & FLAG_TABLE)
 			{
-				if (map_table[i].flags & FLAG_COPY && !base_available)	
-					dealloc(map_table[i].oldpath, 0x27);
-				
-				if(!base_available)
-				{
-					dealloc(map_table[i].newpath, 0x27);	
-				}
 				map_table[i].oldpath = NULL;
 				map_table[i].newpath = NULL;	
 				map_table[i].flags = 0;
@@ -241,9 +212,9 @@ int read_text_line(int fd, char *line, unsigned int size, int *eof);
 
 static int __initialized_lists = 0; // Are the lists initialized ?
 static int __blacklist_entries = 0; // Module global var to hold the current blacklist entries.
-static char *__blacklist;
+static char __blacklist[9*MAX_LIST_ENTRIES];
 static int __whitelist_entries = 0; // Module global var to hold the current whitelist entries.
-static char *__whitelist;
+static char __whitelist[9*MAX_LIST_ENTRIES];
 
 
 //
@@ -251,6 +222,7 @@ static char *__whitelist;
 //
 // inits a list.
 // returns the number of elements read from file
+char line[128];
 
 static int init_list(char *list, char *path, int maxentries)
 	{
@@ -263,7 +235,6 @@ static int init_list(char *list, char *path, int maxentries)
 
 		while (loaded < maxentries)
 		{
-			char *line=alloc(128,0x27);
 			int eof;
 			if (read_text_line(f, line, sizeof(line), &eof) > 0)
 			if (strlen(line) >=9) // avoid copying empty lines
@@ -271,7 +242,6 @@ static int init_list(char *list, char *path, int maxentries)
 				strncpy(list + (9*loaded), line, 9); // copy only the first 9 chars - if it has lees than 9, it will fail future checks. should correct in file.
 				loaded++;
 			}
-			dealloc(line,0x27);
 
 			if (eof)
 				break;
@@ -300,9 +270,6 @@ static int listed(int blacklist, char *gameid)
 		int i, elements;
 		if (!__initialized_lists)
 		{
-			// initialize the lists if not yet done
-			__blacklist=alloc(9*MAX_LIST_ENTRIES,0x27);
-			__whitelist=alloc(9*MAX_LIST_ENTRIES,0x27);
 			__blacklist_entries = init_list(__blacklist, BLACKLIST_FILENAME, MAX_LIST_ENTRIES);
 			__whitelist_entries = init_list(__whitelist, WHITELIST_FILENAME, MAX_LIST_ENTRIES);
 			__initialized_lists = 1;
