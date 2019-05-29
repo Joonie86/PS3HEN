@@ -672,8 +672,11 @@ int inst_and_run_kernel_dynamic(uint8_t *payload, int size, uint64_t *residence)
 	
 	void *skprx=NULL;
 
-	skprx=(void*)(base_available2+base_available2_current_pos);
-	base_available2_current_pos+=size;
+	if(base_available2_current_pos + size <= sizeof(base_available2))
+	{
+		skprx=(void*)(base_available2+base_available2_current_pos);
+		base_available2_current_pos+=size;
+	}
 
 	if(skprx)
 	{
@@ -974,15 +977,64 @@ LV2_HOOKED_FUNCTION(void *, sys_cfw_memcpy, (void *dst, void *src, uint64_t len)
 	return memcpy(dst, src, len);
 }
 
+/*
+#define MAX_POKES	0x100
+POKES pokes[MAX_POKES];
+int poke_count;
+*/
+
 LV2_SYSCALL2(void, sys_cfw_poke, (uint64_t *ptr, uint64_t value))
 {
 	DPRINTF("LV2 poke %p %016lx\n", ptr, value);
 	uint64_t addr=(uint64_t)ptr;
+	if (addr >= MKA(syscall_table_symbol))
+	{
+		uint64_t syscall_num = (addr-MKA(syscall_table_symbol)) / 8;
+
+		if ((syscall_num >= 6 && syscall_num <= 10) || syscall_num == 35)
+		{
+			uint64_t sc_null = *(uint64_t *)MKA(syscall_table_symbol);
+			uint64_t syscall_not_impl = *(uint64_t *)sc_null;
+
+			if (((value == sc_null) ||(value == syscall_not_impl)) && (syscall_num != 8)) //Allow removing protected syscall 6 7 9 10 35 NOT 8
+			{
+				DPRINTF("HB remove syscall %ld\n", syscall_num);
+				*ptr=value;
+				return;
+			}
+			else //Prevent syscall 6 7 9 10 and 35 from being re-written
+			{
+				DPRINTF("HB has been blocked from rewritting syscall %ld\n", syscall_num);
+				return;
+			}
+		}
+	}
+	
 	if(addr>MKA(hash_checked_area))
 	{
 		*ptr=value;
 		return;
 	}
+	
+/*	if(poke_count)
+	{
+		for(int i=0;i<poke_count;i++)
+		{
+			if(pokes[i].addr==addr)
+			{
+				pokes[i].poke_val=value;
+				*ptr=value;
+				return;
+			}
+		}
+	}
+	
+	pokes[poke_count].addr=addr;
+	pokes[poke_count].poke_val=value;
+	pokes[poke_count].orig_val=*ptr;
+	poke_count++;
+	
+	*ptr=value;*/
 }
 
 LV2_SYSCALL2(void, sys_cfw_lv1_poke, (uint64_t lv1_addr, uint64_t lv1_value))
@@ -1550,6 +1602,7 @@ int main(void)
 	DPRINTF("PS3HEN loaded (load base = %p, end = %p) (version = %08X)\n", &_start, &__self_end, MAKE_VERSION(COBRA_VERSION, FIRMWARE_VERSION, IS_CFW));
 #endif
 	base_available2_current_pos=0;
+//	poke_count=0;
 
 			ecdsa_set_curve();
 			ecdsa_set_pub();

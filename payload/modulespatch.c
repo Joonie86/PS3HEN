@@ -409,6 +409,33 @@ void do_patch32(uint64_t addr, uint32_t patch)
 	clear_icache((void *)addr, 4);
 }
 
+/*
+#define MAX_POKES	0x100
+extern int poke_count;
+extern POKES pokes[MAX_POKES];
+
+void do_pokes()
+{
+	if(!poke_count)
+		return;
+	
+	for(int i=0;i<poke_count;i++)
+	{
+		*(uint64_t *)(pokes[i].addr)=pokes[i].poke_val;
+	}
+}
+
+void remove_pokes()
+{
+	if(!poke_count)
+		return;
+	
+	for(int i=0;i<poke_count;i++)
+	{
+		*(uint64_t *)(pokes[i].addr)=pokes[i].orig_val;
+	}
+}*/
+
 LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj, uint64_t *spu_args))
 {
 		do_patch32(MKA(patch_func8_offset1),0x7FE307B4);
@@ -439,6 +466,7 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 		unhook_all_map_path();
 		unhook_function_with_precall(get_syscall_address(801),sys_fs_open,6);
 		unhook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
+	//	remove_pokes();
 #if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)
 		unhook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
 		unhook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
@@ -490,6 +518,7 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 			do_patch(MKA(PATCH_JUMP),0x2F84000448000098);
 			
 			*(uint64_t *)MKA(ECDSA_FLAG)=0;
+		//	do_pokes();
 		//	*(uint64_t *)(r4+8)=0; //ecdsa flag
 		#ifdef DEBUG
 		debug_hook();
@@ -942,7 +971,7 @@ int read_text_line(int fd, char *line, unsigned int size, int *eof)
 	return i;
 }
 extern int base_available2_current_pos;
-extern uint8_t base_available2[64*1024*1024];
+extern uint8_t base_available2[64*1024];
 
 uint64_t load_plugin_kernel(char *path)
 {
@@ -957,8 +986,11 @@ uint64_t load_plugin_kernel(char *path)
 			if(cellFsOpen(path, CELL_FS_O_RDONLY, &file, 0, NULL, 0)==0)
 			{
 				void *skprx=NULL;
-				skprx=(void *)(base_available2+base_available2_current_pos);
-				base_available2_current_pos+=stat.st_size;
+				if(base_available2_current_pos + stat.st_size <= sizeof(base_available2))
+				{
+					skprx=(void*)(base_available2+base_available2_current_pos);
+					base_available2_current_pos+=stat.st_size;
+				}
 				
 				if(skprx)
 				{

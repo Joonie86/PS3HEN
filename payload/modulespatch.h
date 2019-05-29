@@ -253,6 +253,14 @@ typedef struct
 	uint8_t *condition;
 } SprxPatch;
 
+typedef struct
+{
+	uint64_t addr;
+	uint64_t poke_val;
+	uint64_t orig_val;
+}POKES;
+
+
 extern uint8_t condition_ps2softemu;
 extern uint8_t condition_apphome;
 extern uint8_t condition_psp_iso;
