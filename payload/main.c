@@ -945,7 +945,7 @@ LV2_SYSCALL2(uint64_t, sys_cfw_peek, (uint64_t *addr))
 	/* if (block_peek)
 		return (uint64_t)ENOSYS; */
 
-	//DPRINTF("peek %p\n", addr);
+	DPRINTF("peek %p\n", addr);
 
 	uint64_t ret = *addr;
 
@@ -958,7 +958,7 @@ void _sys_cfw_poke(uint64_t *addr, uint64_t value);
 
 LV2_HOOKED_FUNCTION(void, sys_cfw_new_poke, (uint64_t *addr, uint64_t value))
 {
-	//DPRINTF("New poke called\n");
+	DPRINTF("New poke called\n");
 
 	_sys_cfw_poke(addr, value);
 	asm volatile("icbi 0,%0; isync" :: "r"(addr));
@@ -1103,7 +1103,7 @@ LV2_SYSCALL2(int64_t, syscall8, (uint64_t function, uint64_t param1, uint64_t pa
 {
 	extend_kstack(0);
 
-	//DPRINTF("Syscall 8 -> %lx\n", function);
+	DPRINTF("Syscall 8 -> %lx\n", function);
 	
 	// -- AV: temporary disable cobra syscall (allow dumpers peek 0x1000 to 0x9800)
 	static uint8_t tmp_lv1peek = 0;
@@ -1177,7 +1177,7 @@ LV2_SYSCALL2(int64_t, syscall8, (uint64_t function, uint64_t param1, uint64_t pa
 		case SYSCALL8_OPCODE_PS3MAPI:
 			switch ((int)param1)
 			{
-				//DPRINTF("syscall8: PS3M_API function 0x%x\n", (int)param1);
+				DPRINTF("syscall8: PS3M_API function 0x%x\n", (int)param1);
 
 				//----------
 				//CORE

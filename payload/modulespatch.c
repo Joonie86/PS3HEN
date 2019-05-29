@@ -559,7 +559,7 @@ LV2_PATCHED_FUNCTION(int, modules_patching, (uint64_t *arg1, uint32_t *arg2))
 	uint32_t *p = (uint32_t *)arg1[0x18/8];
 	
 	#ifdef	DEBUG
-		//DPRINTF("Flags = %x	   %x\n", self->flags, (p[0x30/4] >> 16));
+		DPRINTF("Flags = %x	   %x\n", self->flags, (p[0x30/4] >> 16));
 	#endif
 
 	// +4.30 -> 0x13 (exact firmware since it happens is unknown)
@@ -681,7 +681,7 @@ LV2_PATCHED_FUNCTION(int, modules_patching, (uint64_t *arg1, uint32_t *arg2))
 		total = 0;
 		
 		#ifdef	DEBUG
-			//DPRINTF("hash = %lx\n", hash);
+			DPRINTF("hash = %lx\n", hash);
 		#endif
 		
 		switch(hash)
@@ -776,7 +776,7 @@ uint8_t cleared_stage0 = 0;
 LV2_HOOKED_FUNCTION_POSTCALL_7(void, pre_map_process_memory, (void *object, uint64_t process_addr, uint64_t size, uint64_t flags, void *unk, void *elf, uint64_t *out))
 {
 	#ifdef	DEBUG
-	//DPRINTF("Map %lx %lx %s\n", process_addr, size, get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL");
+	DPRINTF("Map %lx %lx %s\n", process_addr, size, get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL");
 	#endif
 	
 	// Not the call address, but the call to the caller (process load code for .self)

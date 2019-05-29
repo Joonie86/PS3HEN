@@ -221,7 +221,7 @@ static INLINE int process_read_iso_cmd(ReadIsoCmd *cmd)
 	remaining = cmd->size;
 
 	#ifdef DEBUG
-	//DPRINTF("Read %lx %lx\n", cmd->offset, cmd->size);
+	DPRINTF("Read %lx %lx\n", cmd->offset, cmd->size);
 	#endif
 
 	if (disc_emulation == EMU_PS3 && remaining == 2048)
@@ -912,7 +912,7 @@ int read_psx_sector(void *dma, void *buf, uint64_t sector)
 			#ifdef DEBUG
 			else
 			{
-				//DPRINTF("retm %x\n", ret);
+				DPRINTF("retm %x\n", ret);
 			}
 			#endif
 
@@ -1015,7 +1015,7 @@ void dispatch_thread_entry(uint64_t arg)
 	}
 
 	#ifdef DEBUG
-	//DPRINTF("Exiting dispatch thread %d\n", ret);
+	DPRINTF("Exiting dispatch thread %d\n", ret);
 	#endif
 	ppu_thread_exit(0);
 }
@@ -1030,7 +1030,7 @@ static int read_real_disc_sector (void *buf, uint64_t lba, uint32_t size, int re
 	cmd.sector_count = size;
 
 	#ifdef DEBUG
-	//DPRINTF("Read sector %lx\n", lba);
+	DPRINTF("Read sector %lx\n", lba);
 	#endif
 
 	for (int i = 0; i < retries && ret != 0; i++)
@@ -1237,7 +1237,7 @@ LV2_PATCHED_FUNCTION(int, device_event, (event_port_t event_port, uint64_t event
 
 		if (event == 3)
 		{
-			//DPRINTF("Disc Insert\n");
+			DPRINTF("Disc Insert\n");
 			if (lock)
 				mutex_lock(mutex, 0);
 
@@ -1533,7 +1533,7 @@ int process_generic_iso_scsi_cmd(uint8_t *indata, uint64_t inlen, uint8_t *outda
 			#ifdef DEBUG
 			else
 			{
-				//DPRINTF("Event status: %02X\n", cmd->notification_class_request);
+				DPRINTF("Event status: %02X\n", cmd->notification_class_request);
 			}
 			#endif
 		}
@@ -3405,8 +3405,8 @@ int sys_storage_ext_mount_discfile_proxy(sys_event_port_t result_port, sys_event
 	cd_sector_size = (trackscount & 0xffff00)>>4; //  <- Use: trackscount = num_of_tracks | (cd_sector_size<<8);
 	if(cd_sector_size != 2352 && cd_sector_size != 2048 && cd_sector_size != 2336 && cd_sector_size != 2448) cd_sector_size = 2352;
 	trackscount &= 0xff;
-        //DPRINTF("CD Sector size: %i\n", cd_sector_size);
-        //DPRINTF("Track count: %i\n", trackscount);
+        DPRINTF("CD Sector size: %i\n", cd_sector_size);
+        DPRINTF("Track count: %i\n", trackscount);
 	// --
 
 	if (emu_type == EMU_PSX)
