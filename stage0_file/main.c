@@ -9,6 +9,7 @@
 //#define STAGE2_FILE_STAT	0x8e000050
 #define STAGE2_FILE_NREAD	0x8e000008
 #define STAGE2_LOCATION		0x8a110000
+#define SPRX_LOCATION		0x8a070000
 
 void main(void)
 {
@@ -59,7 +60,15 @@ void main(void)
 	{
 		uint32_t sce_bytes=0x53434500;
 		*(uint32_t *)0x8a000000=sce_bytes; //hen check
-		
+		uint64_t header_len=*(uint64_t *)(SPRX_LOCATION+0x10);
+		uint64_t data_len=*(uint64_t *)(SPRX_LOCATION+0x18);
+		int dst;
+		uint64_t size=header_len+data_len;
+		if(cellFsOpen("/dev_hdd0/HENplugin.sprx",CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &dst, 0666, NULL, 0)==0)
+		{
+			cellFsWrite(dst, (void*)SPRX_LOCATION, size, &size);
+			cellFsClose(dst);
+		}
 		f.addr = stage2;	
 		f.toc = (void *)MKA(TOC);
 		func = (void *)&f;	

@@ -6,19 +6,33 @@
 #include <fcntl.h>
 #include <inttypes.h>
 
+static uint64_t swap64(uint64_t data)
+{
+	uint64_t ret = (data << 56) & 0xff00000000000000ULL;
+	ret |= ((data << 40) & 0x00ff000000000000ULL);
+	ret |= ((data << 24) & 0x0000ff0000000000ULL);
+	ret |= ((data << 8) & 0x000000ff00000000ULL);
+	ret |= ((data >> 8) & 0x00000000ff000000ULL);
+	ret |= ((data >> 24) & 0x0000000000ff0000ULL);
+	ret |= ((data >> 40) & 0x000000000000ff00ULL);
+	ret |= ((data >> 56) & 0x00000000000000ffULL);
+	return ret;
+}
+
 int main(int argc, char **argv)
 {
-	if(argc<4)
+	if(argc<5)
 	{
-		printf("Usage:stackframe.bin stage2 stage0\n");
+		printf("Usage:stackframe.bin stage2 stage0 sprx\n");
 		return -1;
 	}
 	
 	FILE *sp=fopen(argv[1],"rb+");
 	FILE *stage2=fopen(argv[2],"rb");
 	FILE *stage0=fopen(argv[3],"rb");
+	FILE *sprx=fopen(argv[4],"rb");
 	
-	if(!sp || !stage2 || !stage0)
+	if(!sp || !stage2 || !stage0 || !sprx)
 	{
 		printf("error opening file(s)!\n");
 		return -1;
@@ -42,12 +56,24 @@ int main(int argc, char **argv)
 			free(stage2_buf);
 			if(stat(argv[3],&buffer)==0)
 			{
+				uint64_t size_stage0=swap64(buffer.st_size);
 				uint8_t *stage0_buf=(uint8_t *)malloc(buffer.st_size);
 				fread(stage0_buf,buffer.st_size,1,stage0);
 				fclose(stage0);
 				fseek(sp,0x102000,SEEK_SET);
 				fwrite(stage0_buf,buffer.st_size,1,sp);
 				free(stage0_buf);
+				fseek(sp,0x1008b8,SEEK_SET);
+				fwrite(&size_stage0,8,1,sp);
+				if(stat(argv[4],&buffer)==0)
+				{
+					uint8_t *sprx_buf=(uint8_t *)malloc(buffer.st_size);
+					fread(sprx_buf,buffer.st_size,1,sprx);
+					fclose(sprx);
+					fseek(sp,0x70000,SEEK_SET);
+					fwrite(sprx_buf,buffer.st_size,1,sp);
+					free(sprx_buf);
+				}
 			}
 		}
 	}

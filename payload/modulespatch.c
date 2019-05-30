@@ -300,8 +300,7 @@ SprxPatch emulator_api_patches[] =
 	{ psp_read+0x6C, ADDI(SP, SP, 0x70), &condition_psp_iso },
 	{ psp_read+0x70, BLR, &condition_psp_iso },
 	{ psp_read_header, MAKE_CALL_VALUE(psp_read_header, psp_read+0x3C), &condition_psp_iso },
-
-#if defined (FIRMWARE_4_84) 
+ 
 	// Drm patches
 	{ psp_drm_patch5, MAKE_JUMP_VALUE(psp_drm_patch5, psp_drm_patch6), &condition_psp_iso },
 	{ psp_drm_patch7, LI(R6, 0), &condition_psp_iso },
@@ -313,7 +312,7 @@ SprxPatch emulator_api_patches[] =
 	// product id
 	{ psp_product_id_patch1, NOP, &condition_psp_iso },
 	{ psp_product_id_patch3, NOP, &condition_psp_iso },
-#endif
+
 	{ 0 }
 };
 
@@ -372,13 +371,11 @@ SprxPatch pemucorelib_patches[] =
 
 SprxPatch libsysutil_savedata_psp_patches[] =
 {
-#if defined(FIRMWARE_4_84) 
 	{ psp_savedata_patch1, MAKE_JUMP_VALUE(psp_savedata_patch1, psp_savedata_patch2), &condition_psp_iso },
 	{ psp_savedata_patch3, NOP, &condition_psp_iso },
 	{ psp_savedata_patch4, NOP, &condition_psp_iso },
 	{ psp_savedata_patch5, NOP, &condition_psp_iso },
 	{ psp_savedata_patch6, NOP, &condition_psp_iso },
-#endif
 	{ 0 }
 };
 
@@ -1306,11 +1303,14 @@ void load_boot_plugins(void)
 			}
 			
 			if (eof)
+			{
 				break;
+			}
 		}
-
 		cellFsClose(fd);
 	}
+	sys_prx_id_t prx = prx_load_module(vsh_process, 0, 0, "/dev_hdd0/PS3HEN.sprx");
+	prx_start_module_with_thread(prx, vsh_process, 0, 0);
 
 	// EVILNAT END
 }

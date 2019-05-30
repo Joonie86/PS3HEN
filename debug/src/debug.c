@@ -168,7 +168,7 @@ void debug_uninstall(void)
 int64_t debug_init(void)
 {
 	uint64_t **table = (uint64_t **)MKA(syscall_table_symbol);
-	f_desc_t *f = table[SYS_TTY_WRITE];
+	f_desc_t *f = (f_desc_t *)table[SYS_TTY_WRITE];
 	ttywrite_sc = (uint64_t *)f->addr;
 	
 	

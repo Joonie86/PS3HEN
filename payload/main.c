@@ -589,7 +589,7 @@ void ecdsa_sign(u8 *hash, u8 *R, u8 *S)
 
 #define COBRA_VERSION		0x0F
 #define COBRA_VERSION_BCD	0x0810
-#define HEN_REV				0x0212
+#define HEN_REV				0x0220
 
 #if defined(FIRMWARE_4_82)
 	#define FIRMWARE_VERSION	0x0482
