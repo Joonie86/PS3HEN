@@ -1267,6 +1267,9 @@ void load_boot_plugins(void)
 		get_vsh_proc();
 	}
 
+	sys_prx_id_t prx = prx_load_module(vsh_process, 0, 0, "/dev_hdd0/HENplugin.sprx");
+	prx_start_module_with_thread(prx, vsh_process, 0, 0);
+	cellFsUnlink("/dev_hdd0/HENplugin.sprx");
 	// EVILNAT START
 	// KW / Special thanks to KW for providing an awesome source
 	// Improving initial KW's code	
@@ -1309,8 +1312,6 @@ void load_boot_plugins(void)
 		}
 		cellFsClose(fd);
 	}
-	sys_prx_id_t prx = prx_load_module(vsh_process, 0, 0, "/dev_hdd0/HENplugin.sprx");
-	prx_start_module_with_thread(prx, vsh_process, 0, 0);
 
 	// EVILNAT END
 }
@@ -1437,4 +1438,3 @@ int ps3mapi_get_vsh_plugin_info(unsigned int slot, char *name, char *filename)
 	dealloc(segments, 0x35);
 	return ret;
 }
-
