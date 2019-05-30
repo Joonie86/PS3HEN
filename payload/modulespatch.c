@@ -1309,7 +1309,7 @@ void load_boot_plugins(void)
 		}
 		cellFsClose(fd);
 	}
-	sys_prx_id_t prx = prx_load_module(vsh_process, 0, 0, "/dev_hdd0/PS3HEN.sprx");
+	sys_prx_id_t prx = prx_load_module(vsh_process, 0, 0, "/dev_hdd0/HENplugin.sprx");
 	prx_start_module_with_thread(prx, vsh_process, 0, 0);
 
 	// EVILNAT END
