@@ -29,7 +29,9 @@ MapEntry map_table[MAX_TABLE_ENTRIES];
 
 uint8_t photo_gui = 1;
 
-uint8_t pathbuf[(MAX_TABLE_ENTRIES*2)*(MAX_PATH)];
+#define MAX_PATH_MAP	512
+
+uint8_t pathbuf[(MAX_TABLE_ENTRIES*2)*(MAX_PATH_MAP)];
 
 void map_first_slot(char *old, char *newp)
 {
@@ -66,8 +68,8 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 			{
 				if (newpath && strlen(newpath))
 				{
-					strncpy(map_table[i].newpath, newpath, MAX_PATH-1);	
-					map_table[i].newpath[MAX_PATH-1] = 0;
+					strncpy(map_table[i].newpath, newpath, MAX_PATH_MAP-1);	
+					map_table[i].newpath[MAX_PATH_MAP-1] = 0;
 					map_table[i].newpath_len = strlen(newpath);
 					map_table[i].flags = (map_table[i].flags&FLAG_COPY) | (flags&(~FLAG_COPY));
 				}
@@ -101,7 +103,7 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 		
 		if (flags & FLAG_COPY)
 		{
-			map_table[firstfree].oldpath = (void*)(pathbuf+(MAX_TABLE_ENTRIES*MAX_PATH)+(firstfree*MAX_PATH));
+			map_table[firstfree].oldpath = (void*)(pathbuf+(MAX_TABLE_ENTRIES*MAX_PATH_MAP)+(firstfree*MAX_PATH_MAP));
 			strncpy(map_table[firstfree].oldpath, oldpath, len);
 			map_table[firstfree].oldpath[len] = 0;
 		}
@@ -111,9 +113,9 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 		}			
 		
 
-		map_table[firstfree].newpath=(void*)(pathbuf+(firstfree*MAX_PATH));
-		strncpy(map_table[firstfree].newpath, newpath, MAX_PATH-1);	
-		map_table[firstfree].newpath[MAX_PATH-1] = 0;
+		map_table[firstfree].newpath=(void*)(pathbuf+(firstfree*MAX_PATH_MAP));
+		strncpy(map_table[firstfree].newpath, newpath, MAX_PATH_MAP-1);	
+		map_table[firstfree].newpath[MAX_PATH_MAP-1] = 0;
 		map_table[firstfree].newpath_len = strlen(newpath);
 	}
 	
@@ -242,7 +244,7 @@ static char __whitelist[9*MAX_LIST_ENTRIES];
 //
 // inits a list.
 // returns the number of elements read from file
-char line[128];
+char line[0x10];
 
 static int init_list(char *list, char *path, int maxentries)
 	{
@@ -531,7 +533,8 @@ LV2_HOOKED_FUNCTION_POSTCALL_2(void, open_path_hook, (char *path0, int mode))
 			path_chk=cellFsStat(buf,&stat);
 		}
 		uint8_t is_ps2_classic = !strncmp(content_id, "2P0001-PS2U10000_00-0000111122223333", 0x24);
-		if(path_chk==0 || is_ps2_classic)
+		uint8_t is_psp_launcher = !strncmp(content_id, "UP0001-PSPC66820_00-0000111122223333", 0x24);
+		if(path_chk==0 || is_ps2_classic || is_psp_launcher)
 		{
 			uint8_t rap[0x10] = {0xF5, 0xDE, 0xCA, 0xBB, 0x09, 0x88, 0x4F, 0xF4, 0x02, 0xD4, 0x12, 0x3C, 0x25, 0x01, 0x71, 0xD9};
 			uint8_t idps[0x10];
@@ -551,7 +554,7 @@ LV2_HOOKED_FUNCTION_POSTCALL_2(void, open_path_hook, (char *path0, int mode))
 			int fd;
 			uint64_t nread;
 
-			if(!is_ps2_classic)
+			if(!is_ps2_classic || !is_psp_launcher)
 			{
 				if(cellFsOpen(buf, CELL_FS_O_RDONLY, &fd, 0, NULL, 0)==0)
 				{

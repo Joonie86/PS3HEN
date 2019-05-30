@@ -28,7 +28,7 @@ void main(void)
 
 	uint64_t stackframe=0x4D59535441434B46ULL;
 	#if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
-	*(uint64_t *)0x8000000000670000ULL=stackframe; //dumps to identify in payload
+	*(uint64_t *)0x8000000000660000ULL=stackframe; //dumps to identify in payload
 	#elif defined (FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)
 	*(uint64_t *)0x80000000006B0000ULL=stackframe;
 	#endif

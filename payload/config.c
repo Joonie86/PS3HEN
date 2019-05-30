@@ -144,7 +144,7 @@ int sys_read_cobra_config(CobraConfig *cfg)
 		copy_size = 0;
 	
 	#ifdef  DEBUG
-		DPRINTF("erase = %d, copy = %d\n", erase_size, copy_size);
+		//DPRINTF("erase = %d, copy = %d\n", erase_size, copy_size);
 	#endif
 	
 	memcpy(&cfg->checksum, &config.checksum, copy_size);

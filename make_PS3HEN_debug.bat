@@ -14,7 +14,7 @@ cd ../payload
 rm -f *.o *.elf *.self *.bin *.map ../lv1/src/*.o ../debug/src/*.o ../lv2/src/*.o
 make -f Makefile debug
 rm -f *.o *.elf *.self ../lv1/src/*.o ../debug/src/*.o ../lv2/src/*.o
-cd..
+cd ..
 mv  *482C *484C *484D PS3HEN_GEN
 cd PS3HEN_GEN
 gcc main.c  -o HEN_GEN

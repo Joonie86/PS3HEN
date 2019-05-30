@@ -22,6 +22,7 @@
 #include "storage_ext.h"
 #include "mappath.h"
 #include "region.h"
+#include "psp.h"
 
 #define MAX_VSH_PLUGINS 			7
 
@@ -257,6 +258,130 @@ SprxPatch premo_game_plugin_patches[] =
 	{0}
 };
 
+SprxPatch psp_emulator_patches[] =
+{
+	// Sets psp mode as opossed to minis mode. Increases compatibility, removes text protection and makes most savedata work
+	{ psp_set_psp_mode_offset, LI(R4, 0), &condition_psp_iso },
+	{ 0 }
+};
+
+SprxPatch emulator_api_patches[] =
+{
+	// Read umd patches
+	{ psp_read, STDU(SP, 0xFF90, SP), &condition_psp_iso },
+	{ psp_read+4, MFLR(R0), &condition_psp_iso },
+	{ psp_read+8, STD(R0, 0x80, SP), &condition_psp_iso },
+	{ psp_read+0x0C, MR(R8, R7), &condition_psp_iso },
+	{ psp_read+0x10, MR(R7, R6), &condition_psp_iso },
+	{ psp_read+0x14, MR(R6, R5), &condition_psp_iso },
+	{ psp_read+0x18, MR(R5, R4), &condition_psp_iso },
+	{ psp_read+0x1C, MR(R4, R3), &condition_psp_iso },
+	{ psp_read+0x20, LI(R3, SYSCALL8_OPCODE_READ_PSP_UMD), &condition_psp_iso },
+	{ psp_read+0x24, LI(R11, 8), &condition_psp_iso },
+	{ psp_read+0x28, SC, &condition_psp_iso },
+	{ psp_read+0x2C, LD(R0, 0x80, SP), &condition_psp_iso },
+	{ psp_read+0x30, MTLR(R0), &condition_psp_iso },
+	{ psp_read+0x34, ADDI(SP, SP, 0x70), &condition_psp_iso },
+	{ psp_read+0x38, BLR, &condition_psp_iso },
+
+	// Read header patches
+	{ psp_read+0x3C, STDU(SP, 0xFF90, SP), &condition_psp_iso },
+	{ psp_read+0x40, MFLR(R0), &condition_psp_iso },
+	{ psp_read+0x44, STD(R0, 0x80, SP), &condition_psp_iso },
+	{ psp_read+0x48, MR(R7, R6), &condition_psp_iso },
+	{ psp_read+0x4C, MR(R6, R5), &condition_psp_iso },
+	{ psp_read+0x50, MR(R5, R4), &condition_psp_iso },
+	{ psp_read+0x54, MR(R4, R3), &condition_psp_iso },
+	{ psp_read+0x58, LI(R3, SYSCALL8_OPCODE_READ_PSP_HEADER), &condition_psp_iso },
+	{ psp_read+0x5C, LI(R11, 8), &condition_psp_iso },
+	{ psp_read+0x60, SC, &condition_psp_iso },
+	{ psp_read+0x64, LD(R0, 0x80, SP), &condition_psp_iso },
+	{ psp_read+0x68, MTLR(R0), &condition_psp_iso },
+	{ psp_read+0x6C, ADDI(SP, SP, 0x70), &condition_psp_iso },
+	{ psp_read+0x70, BLR, &condition_psp_iso },
+	{ psp_read_header, MAKE_CALL_VALUE(psp_read_header, psp_read+0x3C), &condition_psp_iso },
+
+#if defined (FIRMWARE_4_84) 
+	// Drm patches
+	{ psp_drm_patch5, MAKE_JUMP_VALUE(psp_drm_patch5, psp_drm_patch6), &condition_psp_iso },
+	{ psp_drm_patch7, LI(R6, 0), &condition_psp_iso },
+	{ psp_drm_patch8, LI(R7, 0), &condition_psp_iso },
+	{ psp_drm_patch9, NOP, &condition_psp_iso },
+	{ psp_drm_patch11, LI(R6, 0), &condition_psp_iso },
+	{ psp_drm_patch12, LI(R7, 0), &condition_psp_iso },
+
+	// product id
+	{ psp_product_id_patch1, NOP, &condition_psp_iso },
+	{ psp_product_id_patch3, NOP, &condition_psp_iso },
+#endif
+	{ 0 }
+};
+
+SprxPatch pemucorelib_patches[] =
+{
+	{ psp_eboot_dec_patch, LI(R6, 0x110), &condition_psp_dec }, // -> makes unsigned psp eboot.bin run, 0x10 works too
+	{ psp_prx_patch, STDU(SP, 0xFF90, SP), &condition_psp_iso },
+	{ psp_prx_patch+4, MFLR(R6), &condition_psp_iso },
+	{ psp_prx_patch+8, STD(R6, 0x80, SP), &condition_psp_iso },
+	{ psp_prx_patch+0x0C, LI(R11, 8), &condition_psp_iso },
+	{ psp_prx_patch+0x10, MR(R5, R4), &condition_psp_iso },
+	{ psp_prx_patch+0x14, MR(R4, R3), &condition_psp_iso },
+	{ psp_prx_patch+0x18, LI(R3, SYSCALL8_OPCODE_PSP_PRX_PATCH), &condition_psp_iso },
+	{ psp_prx_patch+0x1C, SC, &condition_psp_iso },
+	{ psp_prx_patch+0x20, LD(R0, 0x80, SP), &condition_psp_iso },
+	{ psp_prx_patch+0x24, MTLR(R0), &condition_psp_iso },
+	{ psp_prx_patch+0x28, ADDI(SP, SP, 0x70), &condition_psp_iso },
+	{ psp_prx_patch+0x2C, BLR, &condition_psp_iso },
+
+	// Patch for savedata binding
+	{ psp_savedata_bind_patch1, MR(R5, R19), &condition_psp_iso },
+	{ psp_savedata_bind_patch2, MAKE_JUMP_VALUE(psp_savedata_bind_patch2, psp_prx_patch+0x30), &condition_psp_iso },
+	{ psp_prx_patch+0x30, LD(R19, 0xFF98, SP), &condition_psp_iso },
+	{ psp_prx_patch+0x34, STDU(SP, 0xFF90, SP), &condition_psp_iso },
+	{ psp_prx_patch+0x38, MFLR(R0), &condition_psp_iso },
+	{ psp_prx_patch+0x3C, STD(R0, 0x80, SP), &condition_psp_iso },
+	{ psp_prx_patch+0x40, LI(R11, 8), &condition_psp_iso },
+	{ psp_prx_patch+0x44, MR(R4, R3), &condition_psp_iso },
+	{ psp_prx_patch+0x48, LI(R3, SYSCALL8_OPCODE_PSP_POST_SAVEDATA_INITSTART), &condition_psp_iso },
+	{ psp_prx_patch+0x4C, SC, &condition_psp_iso },
+	{ psp_prx_patch+0x50, LD(R0, 0x80, SP), &condition_psp_iso },
+	{ psp_prx_patch+0x54, MTLR(R0), &condition_psp_iso },
+	{ psp_prx_patch+0x58, ADDI(SP, SP, 0x70), &condition_psp_iso },
+	{ psp_prx_patch+0x5C, BLR, &condition_psp_iso },
+	{ psp_savedata_bind_patch3, MAKE_JUMP_VALUE(psp_savedata_bind_patch3, psp_prx_patch+0x60), &condition_psp_iso },
+	{ psp_prx_patch+0x60, STDU(SP, 0xFF90, SP), &condition_psp_iso },
+	{ psp_prx_patch+0x64, MFLR(R0), &condition_psp_iso },
+	{ psp_prx_patch+0x68, STD(R0, 0x80, SP), &condition_psp_iso },
+	{ psp_prx_patch+0x6C, LI(R11, 8), &condition_psp_iso },
+	{ psp_prx_patch+0x70, LI(R3, SYSCALL8_OPCODE_PSP_POST_SAVEDATA_SHUTDOWNSTART), &condition_psp_iso },
+	{ psp_prx_patch+0x74, SC, &condition_psp_iso },
+	{ psp_prx_patch+0x78, LD(R0, 0x80, SP), &condition_psp_iso },
+	{ psp_prx_patch+0x7C, MTLR(R0), &condition_psp_iso },
+	{ psp_prx_patch+0x80, ADDI(SP, SP, 0x70), &condition_psp_iso },
+	{ psp_prx_patch+0x84, BLR, &condition_psp_iso },
+
+	// Prometheus
+	{ psp_prometheus_patch, '.OLD', &condition_psp_prometheus },
+
+	/*#if defined(FIRMWARE_4_84) 
+		// Extra save data patch required since some 3.60+ firmware
+		{ psp_extra_savedata_patch, LI(R31, 1), &condition_psp_iso },
+	#endif */
+	{ 0 }
+};
+
+SprxPatch libsysutil_savedata_psp_patches[] =
+{
+#if defined(FIRMWARE_4_84) 
+	{ psp_savedata_patch1, MAKE_JUMP_VALUE(psp_savedata_patch1, psp_savedata_patch2), &condition_psp_iso },
+	{ psp_savedata_patch3, NOP, &condition_psp_iso },
+	{ psp_savedata_patch4, NOP, &condition_psp_iso },
+	{ psp_savedata_patch5, NOP, &condition_psp_iso },
+	{ psp_savedata_patch6, NOP, &condition_psp_iso },
+#endif
+	{ 0 }
+};
+
 SprxPatch libfs_external_patches[] =
 {
 	// Redirect internal libfs function to kernel. If condition_apphome is 1, it means there is a JB game mounted
@@ -285,6 +410,10 @@ PatchTableEntry patch_table[] =
 	{ PS1_EMU_HASH, ps1_emu_patches },
 	{ PS1_NETEMU_HASH, ps1_netemu_patches },
 	{ GAME_EXT_PLUGIN_HASH, game_ext_plugin_patches },
+	{ PSP_EMULATOR_HASH, psp_emulator_patches },
+	{ EMULATOR_API_HASH, emulator_api_patches },
+	{ PEMUCORELIB_HASH, pemucorelib_patches },
+	{ LIBSYSUTIL_SAVEDATA_PSP_HASH, libsysutil_savedata_psp_patches },
 	{ LIBFS_EXTERNAL_HASH, libfs_external_patches },
 	{ NAS_PLUGIN_HASH, nas_plugin_patches },
 	{ BDP_BDMV_HASH, bdp_bdmv_patches },
@@ -559,7 +688,7 @@ LV2_PATCHED_FUNCTION(int, modules_patching, (uint64_t *arg1, uint32_t *arg2))
 	uint32_t *p = (uint32_t *)arg1[0x18/8];
 	
 	#ifdef	DEBUG
-		DPRINTF("Flags = %x	   %x\n", self->flags, (p[0x30/4] >> 16));
+		//DPRINTF("Flags = %x	   %x\n", self->flags, (p[0x30/4] >> 16));
 	#endif
 
 	// +4.30 -> 0x13 (exact firmware since it happens is unknown)
@@ -681,18 +810,30 @@ LV2_PATCHED_FUNCTION(int, modules_patching, (uint64_t *arg1, uint32_t *arg2))
 		total = 0;
 		
 		#ifdef	DEBUG
-			DPRINTF("hash = %lx\n", hash);
+			//DPRINTF("hash = %lx\n", hash);
 		#endif
 		
 		switch(hash)
 		{
-		    //pad_data data;
+		    pad_data data;
 			
 			case VSH_HASH:
 				vsh_check = hash;
 			break;
 
-
+			case EMULATOR_DRM_HASH:
+				if (condition_psp_keys)
+					buf[psp_drm_tag_overwrite/4] = LI(R5, psp_code);
+			break;
+			
+			case EMULATOR_DRM_DATA_HASH:
+				if (condition_psp_keys)
+				{
+					buf[psp_drm_key_overwrite/4] = psp_tag;
+					memcpy(buf+((psp_drm_key_overwrite+8)/4), psp_keys, 16);
+				}
+			break;
+			
 			/*
 			case BASIC_PLUGINS_HASH:
 				if (condition_psp_change_emu)
@@ -702,6 +843,26 @@ LV2_PATCHED_FUNCTION(int, modules_patching, (uint64_t *arg1, uint32_t *arg2))
 				}
 			break;
 			*/
+			case PEMUCORELIB_HASH:
+				if (condition_pemucorelib)
+				{
+
+					if (pad_get_data(&data) >= ((PAD_BTN_OFFSET_DIGITAL+1)*2)){
+
+						if((data.button[PAD_BTN_OFFSET_DIGITAL] & (PAD_CTRL_CROSS|PAD_CTRL_R1)) == (PAD_CTRL_CROSS|PAD_CTRL_R1)){
+
+							DPRINTF("Button Shortcut detected! Applying pemucorelib Extra Savedata Patch...\n");
+
+							DPRINTF("Now patching %s %lx\n", hash_to_name(hash), hash);
+
+							uint32_t data = LI(R31, 1);
+							buf[psp_extra_savedata_patch/4] = data;			
+
+							DPRINTF("Offset: 0x%08X | Data: 0x%08X\n", psp_extra_savedata_patch, data);
+						}
+					}
+				}
+			break;
 			
 			default:
 				//Do nothing
@@ -776,7 +937,7 @@ uint8_t cleared_stage0 = 0;
 LV2_HOOKED_FUNCTION_POSTCALL_7(void, pre_map_process_memory, (void *object, uint64_t process_addr, uint64_t size, uint64_t flags, void *unk, void *elf, uint64_t *out))
 {
 	#ifdef	DEBUG
-	DPRINTF("Map %lx %lx %s\n", process_addr, size, get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL");
+	//DPRINTF("Map %lx %lx %s\n", process_addr, size, get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL");
 	#endif
 	
 	// Not the call address, but the call to the caller (process load code for .self)
@@ -970,8 +1131,10 @@ int read_text_line(int fd, char *line, unsigned int size, int *eof)
 
 	return i;
 }
+#if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
 extern int base_available2_current_pos;
-extern uint8_t base_available2[64*1024];
+extern uint8_t base_available2[56*1024];
+#endif
 
 uint64_t load_plugin_kernel(char *path)
 {
@@ -986,11 +1149,15 @@ uint64_t load_plugin_kernel(char *path)
 			if(cellFsOpen(path, CELL_FS_O_RDONLY, &file, 0, NULL, 0)==0)
 			{
 				void *skprx=NULL;
+				#if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
 				if(base_available2_current_pos + stat.st_size <= sizeof(base_available2))
 				{
 					skprx=(void*)(base_available2+base_available2_current_pos);
 					base_available2_current_pos+=stat.st_size;
 				}
+				#else
+				skprx=alloc(stat.st_size,0x27);
+				#endif
 				
 				if(skprx)
 				{

@@ -27,13 +27,15 @@
 #include "storage_ext.h"
 #include "region.h"
 #include "config.h"
+#include "psp.h"
 #include "sm_ext.h"
 #include "laboratory.h"
 #include "ps3mapi_core.h"
 
-uint8_t base_available2[64*1024];
+#if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
+uint8_t base_available2[56*1024];
 int base_available2_current_pos;
-
+#endif
 
 uint8_t p_fixed[20]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x01,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
 uint8_t a_fixed[20]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x01,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFC};
@@ -672,12 +674,16 @@ int inst_and_run_kernel_dynamic(uint8_t *payload, int size, uint64_t *residence)
 	
 	void *skprx=NULL;
 
+#if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
 	if(base_available2_current_pos + size <= sizeof(base_available2))
 	{
 		skprx=(void*)(base_available2+base_available2_current_pos);
 		base_available2_current_pos+=size;
 	}
-
+	#else
+	skprx=alloc(size,0x27);
+	#endif
+	
 	if(skprx)
 	{
 		memcpy(skprx, get_secure_user_ptr(payload), size);
@@ -945,7 +951,7 @@ LV2_SYSCALL2(uint64_t, sys_cfw_peek, (uint64_t *addr))
 	/* if (block_peek)
 		return (uint64_t)ENOSYS; */
 
-	DPRINTF("peek %p\n", addr);
+	//DPRINTF("peek %p\n", addr);
 
 	uint64_t ret = *addr;
 
@@ -958,7 +964,7 @@ void _sys_cfw_poke(uint64_t *addr, uint64_t value);
 
 LV2_HOOKED_FUNCTION(void, sys_cfw_new_poke, (uint64_t *addr, uint64_t value))
 {
-	DPRINTF("New poke called\n");
+	//DPRINTF("New poke called\n");
 
 	_sys_cfw_poke(addr, value);
 	asm volatile("icbi 0,%0; isync" :: "r"(addr));
@@ -1103,7 +1109,7 @@ LV2_SYSCALL2(int64_t, syscall8, (uint64_t function, uint64_t param1, uint64_t pa
 {
 	extend_kstack(0);
 
-	DPRINTF("Syscall 8 -> %lx\n", function);
+	//DPRINTF("Syscall 8 -> %lx\n", function);
 	
 	// -- AV: temporary disable cobra syscall (allow dumpers peek 0x1000 to 0x9800)
 	static uint8_t tmp_lv1peek = 0;
@@ -1177,7 +1183,7 @@ LV2_SYSCALL2(int64_t, syscall8, (uint64_t function, uint64_t param1, uint64_t pa
 		case SYSCALL8_OPCODE_PS3MAPI:
 			switch ((int)param1)
 			{
-				DPRINTF("syscall8: PS3M_API function 0x%x\n", (int)param1);
+				//DPRINTF("syscall8: PS3M_API function 0x%x\n", (int)param1);
 
 				//----------
 				//CORE
@@ -1438,6 +1444,38 @@ LV2_SYSCALL2(int64_t, syscall8, (uint64_t function, uint64_t param1, uint64_t pa
 			//return sys_cobra_usb_command(param1, param2, param3, (void *)param4, param5);
 			return 0;
 		break;
+		
+		case SYSCALL8_OPCODE_SET_PSP_UMDFILE:
+			return sys_psp_set_umdfile((char *)param1, (char *)param2, param3);
+		break;
+
+		case SYSCALL8_OPCODE_SET_PSP_DECRYPT_OPTIONS:
+			return sys_psp_set_decrypt_options(param1, param2, (uint8_t *)param3, param4, param5, (uint8_t *)param6, param7);
+		break;
+
+		case SYSCALL8_OPCODE_READ_PSP_HEADER:
+			return sys_psp_read_header(param1, (char *)param2, param3, (uint64_t *)param4);
+		break;
+
+		case SYSCALL8_OPCODE_READ_PSP_UMD:
+			return sys_psp_read_umd(param1, (void *)param2, param3, param4, param5);
+		break;
+
+		case SYSCALL8_OPCODE_PSP_PRX_PATCH:
+			return sys_psp_prx_patch((uint32_t *)param1, (uint8_t *)param2, (void *)param3);
+		break;
+
+		case SYSCALL8_OPCODE_PSP_CHANGE_EMU:
+			return sys_psp_set_emu_path((char *)param1);
+		break;
+
+		case SYSCALL8_OPCODE_PSP_POST_SAVEDATA_INITSTART:
+			return sys_psp_post_savedata_initstart(param1, (void *)param2);
+		break;
+
+		case SYSCALL8_OPCODE_PSP_POST_SAVEDATA_SHUTDOWNSTART:
+			return sys_psp_post_savedata_shutdownstart();
+		break;
 
 		case SYSCALL8_OPCODE_AIO_COPY_ROOT:
 			return sys_aio_copy_root((char *)param1, (char *)param2);
@@ -1601,7 +1639,10 @@ int main(void)
 	extern uint64_t __self_end;
 	DPRINTF("PS3HEN loaded (load base = %p, end = %p) (version = %08X)\n", &_start, &__self_end, MAKE_VERSION(COBRA_VERSION, FIRMWARE_VERSION, IS_CFW));
 #endif
+
+#if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
 	base_available2_current_pos=0;
+	#endif
 //	poke_count=0;
 
 			ecdsa_set_curve();

@@ -116,6 +116,28 @@
 #define psp_product_id_patch3			0x115F8
 #define umd_mutex_offset				(0x64480+0x38C)
 
+/* pemucorelib */
+#define psp_eboot_dec_patch				0x5E6BC
+#define psp_prx_patch					0x577D8
+#define psp_savedata_bind_patch1		0x7A4BC
+#define psp_savedata_bind_patch2		0x7A514
+#define psp_savedata_bind_patch3		0x7A030
+#define psp_extra_savedata_patch		0x87540
+#define psp_prometheus_patch			0x12EA28
+#define prx_patch_call_lr				0x5892C
+
+/* emulator_drm */
+#define psp_drm_tag_overwrite			0x4C68
+#define psp_drm_key_overwrite			(0x27600-0xBE80)
+
+/* libsysutil_savedata_psp */
+#define psp_savedata_patch1				0x46CC
+#define psp_savedata_patch2				0x46A4
+#define psp_savedata_patch3				0x4504
+#define psp_savedata_patch4				0x453C
+#define psp_savedata_patch5				0x4550
+#define psp_savedata_patch6				0x46B8
+
 /* nas_plugin */
 
 #define patch1_nas							0x2eae4
@@ -218,8 +240,8 @@
 /* premo_game_plugin */
 #define pcremote_play_offset2			0xc8fc
 
-/* psp_emulator */
-#define psp_set_psp_mode_offset 		0x1C18
+/* psp_emulator */ 
+#define psp_set_psp_mode_offset 		0x1C18 
 
 /* emulator_api */
 #define psp_read						0x102D8
@@ -235,8 +257,29 @@
 #define psp_product_id_patch3			0x115F8
 #define umd_mutex_offset				(0x64480+0x38C)
 
-/* nas_plugin */
+/* pemucorelib */
+#define psp_eboot_dec_patch				0x5E6BC
+#define psp_prx_patch					0x577D8
+#define psp_savedata_bind_patch1		0x7A4BC
+#define psp_savedata_bind_patch2		0x7A514
+#define psp_savedata_bind_patch3		0x7A030
+#define psp_extra_savedata_patch		0x87540
+#define psp_prometheus_patch			0x12EA28
+#define prx_patch_call_lr				0x5892C
 
+/* emulator_drm */
+#define psp_drm_tag_overwrite			0x4C68
+#define psp_drm_key_overwrite			(0x27600-0xBE80)
+
+/* libsysutil_savedata_psp */
+#define psp_savedata_patch1				0x46CC
+#define psp_savedata_patch2				0x46A4
+#define psp_savedata_patch3				0x4504
+#define psp_savedata_patch4				0x453C
+#define psp_savedata_patch5				0x4550
+#define psp_savedata_patch6				0x46B8
+
+/* nas_plugin */
 #define patch1_nas						0x2EEF4 // 
 #define patch2_nas						0x2F058 // 
 #define patch3_nas						0x1FA0C // Install ALL pkgs
