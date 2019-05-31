@@ -30,6 +30,7 @@
 
 #include "common.h"
 #include "stdc.h"
+#include "sys_io.h"
 
 
 SYS_MODULE_INFO(HENPLUGIN, 0, 1, 0);
@@ -175,6 +176,19 @@ static inline sys_prx_id_t prx_get_module_id_by_address(void *addr)
 	system_call_1(461, (uint64_t)(uint32_t)addr);
 	return (int)p1;
 }
+
+static inline int unregister_service(uint32_t config_hdl,uint32_t service_hdl)
+{
+	system_call_2(0x20a, config_hdl,service_hdl);
+	return (int)p1;
+}
+
+static inline int config_close(uint32_t config_hdl)
+{
+	system_call_1(0x205, config_hdl);
+	return (int)p1;
+}
+
 #define SC_STOP_PRX_MODULE 				(482)
 #define SC_UNLOAD_PRX_MODULE 			(483)
 #define SC_COBRA_SYSCALL8 8
@@ -196,6 +210,15 @@ static void stop_prx_module(void)
 	{system_call_6(SC_STOP_PRX_MODULE, (uint64_t)prx, 0, NULL, (uint64_t)(uint32_t)result, 0, NULL);}
 
 }
+
+typedef struct hen_config
+{
+	uint32_t config_hdl;
+	uint32_t service_hdl1;
+	uint32_t service_hdl2;
+	uint32_t service_hdl3;
+	uint32_t service_hdl4; //only dex atm 4th service
+} HEN_CONFIG;
 
 #define SYSCALL8_OPCODE_HEN_REV		0x1339
 
@@ -220,6 +243,24 @@ static void henplugin_thread(uint64_t arg)
 	enable_ingame_screenshot();
 //	sys_timer_usleep(70000);
 	reload_xmb();
+	
+	HEN_CONFIG CONFIG;
+	int fd;
+	uint64_t nread;
+	if(cellFsOpen("/dev_hdd0/HENCONFIG", CELL_FS_O_RDONLY, &fd, NULL, 0)==0)
+	{
+		cellFsRead(fd, &CONFIG, sizeof(HEN_CONFIG), &nread);
+		cellFsClose(fd);
+		cellFsUnlink("/dev_hdd0/HENCONFIG");
+		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl1);
+		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl2);
+		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl3);
+		if(CONFIG.service_hdl4)
+		{
+			unregister_service(CONFIG.config_hdl,CONFIG.service_hdl4);
+		}
+		config_close(CONFIG.config_hdl);
+	}
 	
 	DPRINTF("Exiting main thread!\n");	
 	done=1;

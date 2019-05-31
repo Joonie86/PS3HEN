@@ -11,11 +11,39 @@
 #define STAGE2_LOCATION		0x8a110000
 #define SPRX_LOCATION		0x8a070000
 
+typedef struct hen_config
+{
+	uint32_t config_hdl;
+	uint32_t service_hdl1;
+	uint32_t service_hdl2;
+	uint32_t service_hdl3;
+	uint32_t service_hdl4; //only on dex atm
+} HEN_CONFIG;
+
 void main(void)
 {
 	void *stage2 = NULL;
 	f_desc_t f;
 	int (* func)(void);	
+	HEN_CONFIG CONFIG;
+	CONFIG.config_hdl=*(uint32_t *)0x8d000500;
+	CONFIG.service_hdl1=*(uint32_t *)0x8D0FF050;
+	CONFIG.service_hdl2=*(uint32_t *)0x8D0FF054;
+	CONFIG.service_hdl3=*(uint32_t *)0x8D0FF058;
+	
+	#if defined (FIRMWARE_4_82DEX) ||  defined (FIRMWARE_4_84DEX)
+	CONFIG.service_hdl4=*(uint32_t *)0x8D0FF05c;
+	#else
+	CONFIG.service_hdl4=0;
+	#endif
+	
+	uint64_t read;
+	int dst;
+	if(cellFsOpen("/dev_hdd0/HENCONFIG",CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &dst, 0666, NULL, 0)==0)
+	{
+		cellFsWrite(dst, &CONFIG, sizeof(HEN_CONFIG), &read);
+		cellFsClose(dst);
+	}
 
 //	CellFsStat *stat=(CellFsStat *)STAGE2_FILE_STAT;
 
@@ -27,29 +55,13 @@ void main(void)
 		lv1_write_htab_entry(0, i << 3, pte0, (pte1 & 0xff0000) | 0x190);
 	}
 
-	uint64_t stackframe=0x4D59535441434B46ULL;
-	#if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
-	*(uint64_t *)0x8000000000660000ULL=stackframe; //dumps to identify in payload
-	#elif defined (FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)
-	*(uint64_t *)0x80000000006B0000ULL=stackframe;
-	#endif
-	
 	uint64_t size;
 //	size=stat->st_size;
 	size=*(uint64_t *)STAGE2_FILE_NREAD;
 	if(size>0x110000) // Thanks to @aldostools, this will prevent hang if binary does not have stage2
 	{
 		size=size-0x110000;
-		uint64_t base=0x8000000000630000ULL;
-		while(base<0x8000000000700000ULL)
-		{
-			if(*(uint64_t *)base==stackframe)
-			{
-				stage2=(void*)base;
-				break;
-			}
-			base+=0x10000;
-		}
+		stage2=alloc(size,0x27);
 		if (stage2)
 		{		
 			memcpy(stage2,(void *)STAGE2_LOCATION,size);
@@ -62,7 +74,6 @@ void main(void)
 		*(uint32_t *)0x8a000000=sce_bytes; //hen check
 		uint64_t header_len=*(uint64_t *)(SPRX_LOCATION+0x10);
 		uint64_t data_len=*(uint64_t *)(SPRX_LOCATION+0x18);
-		int dst;
 		uint64_t size=header_len+data_len;
 		if(cellFsOpen("/dev_hdd0/HENplugin.sprx",CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &dst, 0666, NULL, 0)==0)
 		{

@@ -29,9 +29,6 @@ MapEntry map_table[MAX_TABLE_ENTRIES];
 
 uint8_t photo_gui = 1;
 
-
-uint8_t pathbuf[((MAX_TABLE_ENTRIES+1)*2)*(MAX_PATH)];
-
 void map_first_slot(char *old, char *newp)
 {
 	map_table[0].oldpath=old;
@@ -74,12 +71,17 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 				}
 				else
 				{
+					if (map_table[i].flags & FLAG_COPY)
+						dealloc(map_table[i].oldpath, 0x27);
+					
+					dealloc(map_table[i].newpath, 0x27);	
 					map_table[i].oldpath = NULL;
 					map_table[i].newpath = NULL;
 					map_table[i].oldpath_len = 0;
 					map_table[i].newpath_len = 0;					
 					map_table[i].flags = 0;
 				}
+				
 				
 				break;
 			}
@@ -102,17 +104,15 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 		
 		if (flags & FLAG_COPY)
 		{
-			map_table[firstfree].oldpath = (void*)(pathbuf+(MAX_TABLE_ENTRIES*MAX_PATH)+(firstfree*MAX_PATH));
+			map_table[firstfree].oldpath = alloc(len+1, 0x27);
 			strncpy(map_table[firstfree].oldpath, oldpath, len);
 			map_table[firstfree].oldpath[len] = 0;
 		}
 		else		
-		{
 			map_table[firstfree].oldpath = oldpath;	
-		}			
 		
 
-		map_table[firstfree].newpath=(void*)(pathbuf+(firstfree*MAX_PATH));
+		map_table[firstfree].newpath = alloc(MAX_PATH, 0x27);
 		strncpy(map_table[firstfree].newpath, newpath, MAX_PATH-1);	
 		map_table[firstfree].newpath[MAX_PATH-1] = 0;
 		map_table[firstfree].newpath_len = strlen(newpath);
@@ -208,6 +208,10 @@ int sys_map_paths(char *paths[], char *new_paths[], unsigned int num)
 		{
 			if (map_table[i].flags & FLAG_TABLE)
 			{
+				if (map_table[i].flags & FLAG_COPY)	
+					dealloc(map_table[i].oldpath, 0x27);
+				
+				dealloc(map_table[i].newpath, 0x27);
 				map_table[i].oldpath = NULL;
 				map_table[i].newpath = NULL;	
 				map_table[i].flags = 0;

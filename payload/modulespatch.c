@@ -1133,10 +1133,6 @@ int read_text_line(int fd, char *line, unsigned int size, int *eof)
 
 	return i;
 }
-#if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
-extern int base_available2_current_pos;
-extern uint8_t base_available2[50*1024];
-#endif
 
 uint64_t load_plugin_kernel(char *path)
 {
@@ -1151,15 +1147,8 @@ uint64_t load_plugin_kernel(char *path)
 			if(cellFsOpen(path, CELL_FS_O_RDONLY, &file, 0, NULL, 0)==0)
 			{
 				void *skprx=NULL;
-				#if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
-				if(base_available2_current_pos + stat.st_size <= sizeof(base_available2))
-				{
-					skprx=(void*)(base_available2+base_available2_current_pos);
-					base_available2_current_pos+=stat.st_size;
-				}
-				#else
+
 				skprx=alloc(stat.st_size,0x27);
-				#endif
 				
 				if(skprx)
 				{
@@ -1172,6 +1161,10 @@ uint64_t load_plugin_kernel(char *path)
 						func();
 						uint64_t resident=(uint64_t)skprx;
 						return resident;
+					}
+					else
+					{
+						dealloc(skprx,0x27);
 					}
 				}
 				else

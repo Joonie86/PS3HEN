@@ -32,11 +32,6 @@
 #include "laboratory.h"
 #include "ps3mapi_core.h"
 
-#if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
-uint8_t base_available2[50*1024];
-int base_available2_current_pos;
-#endif
-
 uint8_t p_fixed[20]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x01,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
 uint8_t a_fixed[20]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x01,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFC};
 uint8_t b_fixed[20]={0xA6,0x8B,0xED,0xC3,0x34,0x18,0x02,0x9C,0x1D,0x3C,0xE3,0x3B,0x9A,0x32,0x1F,0xCC,0xBB,0x9E,0x0F,0x0B};
@@ -674,15 +669,7 @@ int inst_and_run_kernel_dynamic(uint8_t *payload, int size, uint64_t *residence)
 	
 	void *skprx=NULL;
 
-#if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
-	if(base_available2_current_pos + size <= sizeof(base_available2))
-	{
-		skprx=(void*)(base_available2+base_available2_current_pos);
-		base_available2_current_pos+=size;
-	}
-	#else
 	skprx=alloc(size,0x27);
-	#endif
 	
 	if(skprx)
 	{
@@ -733,9 +720,10 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_6(int,sys_fs_open,(const char *path, int fla
 	}
 	return 0;
 }
-SHACtx ctx_sha;
+
 int sha1(uint8_t *buf, uint64_t size, uint8_t *out)
 {
+	SHACtx ctx_sha;
 	sha1_init(&ctx_sha);
 	sha1_update(&ctx_sha,buf,size);
 	sha1_final(out,&ctx_sha);
@@ -939,6 +927,7 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64
 
 int unload_plugin_kernel(uint64_t residence)
 {
+	dealloc((void*)residence,0x27);
 	return 0;
 }
 
@@ -1643,9 +1632,6 @@ int main(void)
 	DPRINTF("PS3HEN loaded (load base = %p, end = %p) (version = %08X)\n", &_start, &__self_end, MAKE_VERSION(COBRA_VERSION, FIRMWARE_VERSION, IS_CFW));
 #endif
 
-#if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
-	base_available2_current_pos=0;
-	#endif
 //	poke_count=0;
 
 			ecdsa_set_curve();
