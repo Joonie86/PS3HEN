@@ -33,7 +33,7 @@
 #include "ps3mapi_core.h"
 
 #if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
-uint8_t base_available2[56*1024];
+uint8_t base_available2[50*1024];
 int base_available2_current_pos;
 #endif
 

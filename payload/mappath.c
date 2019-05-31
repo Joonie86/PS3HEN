@@ -12,7 +12,7 @@
 #include "ps3mapi_core.h"
 #include <lv2/security.h>
 
-#define MAX_TABLE_ENTRIES 30
+#define MAX_TABLE_ENTRIES 18
 
 typedef struct _MapEntry
 {
@@ -29,9 +29,8 @@ MapEntry map_table[MAX_TABLE_ENTRIES];
 
 uint8_t photo_gui = 1;
 
-#define MAX_PATH_MAP	512
 
-uint8_t pathbuf[(MAX_TABLE_ENTRIES*2)*(MAX_PATH_MAP)];
+uint8_t pathbuf[(MAX_TABLE_ENTRIES*2)*(MAX_PATH)];
 
 void map_first_slot(char *old, char *newp)
 {
@@ -68,8 +67,8 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 			{
 				if (newpath && strlen(newpath))
 				{
-					strncpy(map_table[i].newpath, newpath, MAX_PATH_MAP-1);	
-					map_table[i].newpath[MAX_PATH_MAP-1] = 0;
+					strncpy(map_table[i].newpath, newpath, MAX_PATH-1);	
+					map_table[i].newpath[MAX_PATH-1] = 0;
 					map_table[i].newpath_len = strlen(newpath);
 					map_table[i].flags = (map_table[i].flags&FLAG_COPY) | (flags&(~FLAG_COPY));
 				}
@@ -103,7 +102,7 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 		
 		if (flags & FLAG_COPY)
 		{
-			map_table[firstfree].oldpath = (void*)(pathbuf+(MAX_TABLE_ENTRIES*MAX_PATH_MAP)+(firstfree*MAX_PATH_MAP));
+			map_table[firstfree].oldpath = (void*)(pathbuf+(MAX_TABLE_ENTRIES*MAX_PATH)+(firstfree*MAX_PATH));
 			strncpy(map_table[firstfree].oldpath, oldpath, len);
 			map_table[firstfree].oldpath[len] = 0;
 		}
@@ -113,9 +112,9 @@ int map_path(char *oldpath, char *newpath, uint32_t flags)
 		}			
 		
 
-		map_table[firstfree].newpath=(void*)(pathbuf+(firstfree*MAX_PATH_MAP));
-		strncpy(map_table[firstfree].newpath, newpath, MAX_PATH_MAP-1);	
-		map_table[firstfree].newpath[MAX_PATH_MAP-1] = 0;
+		map_table[firstfree].newpath=(void*)(pathbuf+(firstfree*MAX_PATH));
+		strncpy(map_table[firstfree].newpath, newpath, MAX_PATH-1);	
+		map_table[firstfree].newpath[MAX_PATH-1] = 0;
 		map_table[firstfree].newpath_len = strlen(newpath);
 	}
 	

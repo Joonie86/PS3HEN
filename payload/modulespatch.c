@@ -162,7 +162,7 @@ SprxPatch explore_plugin_patches[] =
 
 SprxPatch explore_category_game_patches[] =
 {
-	//{ ps2_nonbw_offset2, LI(R0, 1), &condition_ps2softemu },
+	{ ps2_nonbw_offset2, LI(R0, 1), &condition_ps2softemu },
 	{ 0 }
 };
 
@@ -402,7 +402,7 @@ PatchTableEntry patch_table[] =
 	{ VSH_HASH, main_vsh_patches },
 	//{ BASIC_PLUGINS_HASH, basic_plugins_patches },
 	{ EXPLORE_PLUGIN_HASH, explore_plugin_patches },
-	{ EXPLORE_CATEGORY_GAME_HASH, explore_category_game_patches },
+	//{ EXPLORE_CATEGORY_GAME_HASH, explore_category_game_patches },
 	{ BDP_DISC_CHECK_PLUGIN_HASH, bdp_disc_check_plugin_patches },
 	{ PS1_EMU_HASH, ps1_emu_patches },
 	{ PS1_NETEMU_HASH, ps1_netemu_patches },
@@ -436,10 +436,10 @@ static char *hash_to_name(uint64_t hash)
 		case EXPLORE_PLUGIN_HASH:
 			return "explore_plugin.sprx";
 		break;
-		
+		/*
 		case EXPLORE_CATEGORY_GAME_HASH:
 			return "explore_category_game.sprx";
-		break;
+		break;*/
 		
 		case BDP_DISC_CHECK_PLUGIN_HASH:
 			return "bdp_disccheck_plugin.sprx";
@@ -1134,7 +1134,7 @@ int read_text_line(int fd, char *line, unsigned int size, int *eof)
 }
 #if !defined (DEBUG) || defined(FIRMWARE_4_84DEX)
 extern int base_available2_current_pos;
-extern uint8_t base_available2[56*1024];
+extern uint8_t base_available2[50*1024];
 #endif
 
 uint64_t load_plugin_kernel(char *path)
