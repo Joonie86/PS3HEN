@@ -30,7 +30,7 @@ MapEntry map_table[MAX_TABLE_ENTRIES];
 uint8_t photo_gui = 1;
 
 
-uint8_t pathbuf[(MAX_TABLE_ENTRIES*2)*(MAX_PATH)];
+uint8_t pathbuf[((MAX_TABLE_ENTRIES+1)*2)*(MAX_PATH)];
 
 void map_first_slot(char *old, char *newp)
 {
