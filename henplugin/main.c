@@ -35,7 +35,7 @@
 SYS_MODULE_INFO(HENPLUGIN, 0, 1, 0);
 SYS_MODULE_START(henplugin_start);
 SYS_MODULE_STOP(henplugin_stop);
-SYS_MODULE_EXIT(henplugin_stop);
+SYS_MODULE_EXIT(henplugin_exit);
 
 #define THREAD_NAME "henplugin_thread"
 #define STOP_THREAD_NAME "henplugin_stop_thread"
@@ -225,7 +225,6 @@ static void henplugin_thread(uint64_t arg)
 	reload_xmb();
 	
 	DPRINTF("Exiting main thread!\n");	
-	stop_prx_module();
 	sys_ppu_thread_exit(0);
 }
 
@@ -243,14 +242,21 @@ static void henplugin_stop_thread(uint64_t arg)
 	DPRINTF("henplugin_stop_thread\n");
 	done = 1;
 	
-	if (thread_id != (sys_ppu_thread_t)-1)
-	{
-		uint64_t exit_code;
-		sys_ppu_thread_join(thread_id, &exit_code);
-	}
-	
 	DPRINTF("Exiting stop thread!\n");
 	sys_ppu_thread_exit(0);
+}
+
+static void finalize_module(void)
+{
+	uint64_t meminfo[5];
+	
+	sys_prx_id_t prx = prx_get_module_id_by_address(finalize_module);
+	
+	meminfo[0] = 0x28;
+	meminfo[1] = 2;
+	meminfo[3] = 0;
+	
+	system_call_3(482, prx, 0, (uint64_t)(uint32_t)meminfo);		
 }
 
 int henplugin_stop(void)
@@ -261,10 +267,13 @@ int henplugin_stop(void)
 	sys_ppu_thread_create(&t, henplugin_stop_thread, 0, 0, 0x2000, SYS_PPU_THREAD_CREATE_JOINABLE, STOP_THREAD_NAME);
 	sys_ppu_thread_join(t, &exit_code);	
 	
-	sys_timer_usleep(500000);
-
-	unload_prx_module();
-	
+	finalize_module();
 	_sys_ppu_thread_exit(0);
 	return SYS_PRX_STOP_OK;
+}
+
+int henplugin_exit(void);
+int henplugin_exit(void)
+{ //Leave this as is
+	return 0;
 }

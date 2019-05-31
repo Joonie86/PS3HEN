@@ -12,6 +12,7 @@
 #include <lv2/security.h>
 #include <lv2/thread.h>
 #include <lv2/syscall.h>
+#include <lv2/time.h>
 #include "common.h"
 #include "modulespatch.h"
 #include "crypto.h"
@@ -1271,9 +1272,19 @@ void load_boot_plugins(void)
 		get_vsh_proc();
 	}
 
-	sys_prx_id_t prx = prx_load_module(vsh_process, 0, 0, "/dev_hdd0/HENplugin.sprx");
-	prx_start_module_with_thread(prx, vsh_process, 0, 0);
-	cellFsUnlink("/dev_hdd0/HENplugin.sprx");
+	CellFsStat stat;
+	if(cellFsStat("/dev_hdd0/HENplugin.sprx",&stat)==0)
+	{
+		sys_prx_id_t prx = prx_load_module(vsh_process, 0, 0, "/dev_hdd0/HENplugin.sprx");
+		if(prx)
+		{
+			prx_start_module_with_thread(prx, vsh_process, 0, 0);
+			timer_usleep(SECONDS(2));
+			prx_stop_module_with_thread(prx, vsh_process, 0, 0);
+			prx_unload_module(prx, vsh_process);
+			cellFsUnlink("/dev_hdd0/HENplugin.sprx");
+		}
+	}
 	// EVILNAT START
 	// KW / Special thanks to KW for providing an awesome source
 	// Improving initial KW's code	
