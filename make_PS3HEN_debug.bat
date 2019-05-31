@@ -8,7 +8,7 @@ set CYGWIN=C:\PSDK3v2\MinGW\msys\1.0\bin
 
 mv  *CEX_482 *CEX_484 *DEX_484 PS3HEN_GEN
 cd henplugin
-%CYGWIN%\bash -i -c 'make; rm -r objs; rm henplugin.prx; rm henplugin.sym; mv henplugin.sprx ../PS3HEN_GEN;'
+%CYGWIN%\bash -i -c 'make debug; rm -r objs; rm henplugin.prx; rm henplugin.sym; mv henplugin.sprx ../PS3HEN_GEN;'
 cd ../stage0_file
 rm -f *.o *.elf *.self *.bin *.map ../lv1/src/*.o ../debug/src/*.o ../lv2/src/*.o
 make -f Makefile all

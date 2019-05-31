@@ -56,6 +56,11 @@ int ps3mapi_get_all_processes_pid(process_id_t *pid_list)
 		}
 
 		char *proc_name = get_process_name(process);
+		if(((uint64_t)(proc_name) & 0xFF00000000000000ULL)!=MKA(0))
+		{
+			tmp_pid_list[i] = 0; //strlen crashing because proc name==NULL
+			continue;
+		}
 
 		if ( 0 < strlen(proc_name)) 
 			tmp_pid_list[i] = process->pid;	

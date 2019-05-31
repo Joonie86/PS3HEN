@@ -34,8 +34,6 @@
 
 SYS_MODULE_INFO(HENPLUGIN, 0, 1, 0);
 SYS_MODULE_START(henplugin_start);
-SYS_MODULE_STOP(henplugin_stop);
-SYS_MODULE_EXIT(henplugin_exit);
 
 #define THREAD_NAME "henplugin_thread"
 #define STOP_THREAD_NAME "henplugin_stop_thread"
@@ -53,7 +51,6 @@ static sys_ppu_thread_t thread_id=-1;
 static int done = 0;
 
 int henplugin_start(uint64_t arg);
-int henplugin_stop(void);
 
 extern int vshmain_87BB0001(int param);
 int (*vshtask_notify)(int, const char *) = NULL;
@@ -225,6 +222,7 @@ static void henplugin_thread(uint64_t arg)
 	reload_xmb();
 	
 	DPRINTF("Exiting main thread!\n");	
+	done=1;
 	sys_ppu_thread_exit(0);
 }
 
@@ -235,45 +233,4 @@ int henplugin_start(uint64_t arg)
 	// Exit thread using directly the syscall and not the user mode library or we will crash
 	_sys_ppu_thread_exit(0);	
 	return SYS_PRX_RESIDENT;
-}
-
-static void henplugin_stop_thread(uint64_t arg)
-{
-	DPRINTF("henplugin_stop_thread\n");
-	done = 1;
-	
-	DPRINTF("Exiting stop thread!\n");
-	sys_ppu_thread_exit(0);
-}
-
-static void finalize_module(void)
-{
-	uint64_t meminfo[5];
-	
-	sys_prx_id_t prx = prx_get_module_id_by_address(finalize_module);
-	
-	meminfo[0] = 0x28;
-	meminfo[1] = 2;
-	meminfo[3] = 0;
-	
-	system_call_3(482, prx, 0, (uint64_t)(uint32_t)meminfo);		
-}
-
-int henplugin_stop(void)
-{
-	sys_ppu_thread_t t;
-	uint64_t exit_code;
-	
-	sys_ppu_thread_create(&t, henplugin_stop_thread, 0, 0, 0x2000, SYS_PPU_THREAD_CREATE_JOINABLE, STOP_THREAD_NAME);
-	sys_ppu_thread_join(t, &exit_code);	
-	
-	finalize_module();
-	_sys_ppu_thread_exit(0);
-	return SYS_PRX_STOP_OK;
-}
-
-int henplugin_exit(void);
-int henplugin_exit(void)
-{ //Leave this as is
-	return 0;
 }
