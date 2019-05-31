@@ -1237,7 +1237,7 @@ LV2_PATCHED_FUNCTION(int, device_event, (event_port_t event_port, uint64_t event
 
 		if (event == 3)
 		{
-			//DPRINTF("Disc Insert\n");
+			DPRINTF("Disc Insert\n");
 			if (lock)
 				mutex_lock(mutex, 0);
 

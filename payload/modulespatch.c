@@ -124,10 +124,10 @@ static int loading_vsh_plugin;
 
 SprxPatch main_vsh_patches[] =
 {
-	{ ps2tonet_patch, ORI(R3, R3, 0x8204), &condition_ps2softemu },
+	/*{ ps2tonet_patch, ORI(R3, R3, 0x8204), &condition_ps2softemu },
 	{ ps2tonet_size_patch, LI(R5, 0x40), &condition_ps2softemu },
 	{ ps2tonet_patch, ORI(R3, R3, 0x8202), &condition_false },
-	{ ps2tonet_size_patch, LI(R5, 0x4f0), &condition_false },
+	{ ps2tonet_size_patch, LI(R5, 0x4f0), &condition_false },*/
 	//{ game_update_offset, LI(R3, -1), &condition_disable_gameupdate }, [DISABLED by DEFAULT since 4.46]
 	//{ psp_newdrm_patch, LI(R3, 0), &condition_true }, // Fixes the issue (80029537) with PSP Pkg games
 	{ 0 }
@@ -145,7 +145,7 @@ SprxPatch explore_plugin_patches[] =
 	{ app_home_offset, 0x2f646576, &condition_apphome   }, 
 	{ app_home_offset+4, 0x5f626476, &condition_apphome }, 
 	{ app_home_offset+8, 0x642f5053, &condition_apphome }, 
-	{ ps2_nonbw_offset, LI(0, 1), &condition_ps2softemu },
+	//{ ps2_nonbw_offset, LI(0, 1), &condition_ps2softemu },
 	//// Devil303's What's New ///
 	{whatsnew_offset, 0x68747470, &condition_true	},
 	{whatsnew_offset+4, 0x3A2F2F77, &condition_true	},
@@ -162,7 +162,7 @@ SprxPatch explore_plugin_patches[] =
 
 SprxPatch explore_category_game_patches[] =
 {
-	{ ps2_nonbw_offset2, LI(R0, 1), &condition_ps2softemu },
+	//{ ps2_nonbw_offset2, LI(R0, 1), &condition_ps2softemu },
 	{ 0 }
 };
 
@@ -188,7 +188,7 @@ SprxPatch ps1_netemu_patches[] =
 SprxPatch game_ext_plugin_patches[] =
 {
 	{ sfo_check_offset, NOP, &condition_true },
-	{ ps2_nonbw_offset3, LI(R0, 1), &condition_ps2softemu },
+	//{ ps2_nonbw_offset3, LI(R0, 1), &condition_ps2softemu },
 	{ ps_region_error_offset, NOP, &condition_true }, // Needed sometimes... 
 	{ remote_play_offset, 0x419e0028, &condition_true },  
 	//{ ps_video_error_offset, LI(R3, 0), &condition_game_ext_psx },
@@ -571,6 +571,7 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 #elif defined (FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)
  		do_patch32(MKA(patch_func8_offset2),0x4821B4BD);
 		do_patch32(MKA(lic_patch),0x482584B5); // ignore LIC.DAT check
+		do_patch(MKA(vsh_patch),0xE92280087C0802A6);		
 #endif        
 		do_patch32(MKA(user_thread_prio_patch),0x419DFF84); // for NetISO
 		do_patch32(MKA(user_thread_prio_patch2),0x419D0258); // for NetISO
@@ -611,13 +612,13 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 		caller_process = process->pid;
 
 		#ifdef	DEBUG
-			DPRINTF("caller_process = %08X %s\n", caller_process, get_process_name(process));
-			DPRINTF("saved sce hdr ptr:%p\n", saved_sce_hdr);
+			//DPRINTF("caller_process = %08X %s\n", caller_process, get_process_name(process));
+			//DPRINTF("saved sce hdr ptr:%p\n", saved_sce_hdr);
 		#endif
 	}
 	uint8_t is_ptr=(((uint64_t)saved_sce_hdr&0xff00000000000000)>>56); //new
 	//uint64_t is_ptr=((uint64_t)saved_sce_hdr&0xff00000000000000);
-	DPRINTF("IS_PTR:%x\n",is_ptr);
+	//DPRINTF("IS_PTR:%x\n",is_ptr);
 	
 	if(is_ptr==0x80) //new
 	//if(is_ptr>=0x8000000000000000)
@@ -628,6 +629,9 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 			timer_usleep(625000);
 		}
 	}
+			#if defined (FIRMWARE_4_82DEX) ||  defined (FIRMWARE_4_84DEX)
+			do_patch(MKA(vsh_patch),0x386000014E800020);
+			#endif			
 			do_patch32(MKA(patch_func8_offset1),0x38600000); 
 			do_patch32(MKA(patch_func8_offset2),0x60000000);
 			do_patch32(MKA(user_thread_prio_patch),0x60000000); // for NetISO
@@ -934,7 +938,7 @@ uint8_t cleared_stage0 = 0;
 LV2_HOOKED_FUNCTION_POSTCALL_7(void, pre_map_process_memory, (void *object, uint64_t process_addr, uint64_t size, uint64_t flags, void *unk, void *elf, uint64_t *out))
 {
 	#ifdef	DEBUG
-	//DPRINTF("Map %lx %lx %s\n", process_addr, size, get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL");
+	DPRINTF("Map %lx %lx %s\n", process_addr, size, get_current_process() ? get_process_name(get_current_process())+8 : "KERNEL");
 	#endif
 	
 	// Not the call address, but the call to the caller (process load code for .self)

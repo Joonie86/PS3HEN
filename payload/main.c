@@ -964,7 +964,7 @@ void _sys_cfw_poke(uint64_t *addr, uint64_t value);
 
 LV2_HOOKED_FUNCTION(void, sys_cfw_new_poke, (uint64_t *addr, uint64_t value))
 {
-	//DPRINTF("New poke called\n");
+	DPRINTF("New poke called\n");
 
 	_sys_cfw_poke(addr, value);
 	asm volatile("icbi 0,%0; isync" :: "r"(addr));
@@ -1109,7 +1109,7 @@ LV2_SYSCALL2(int64_t, syscall8, (uint64_t function, uint64_t param1, uint64_t pa
 {
 	extend_kstack(0);
 
-	//DPRINTF("Syscall 8 -> %lx\n", function);
+	DPRINTF("Syscall 8 -> %lx\n", function);
 	
 	// -- AV: temporary disable cobra syscall (allow dumpers peek 0x1000 to 0x9800)
 	static uint8_t tmp_lv1peek = 0;
@@ -1183,7 +1183,7 @@ LV2_SYSCALL2(int64_t, syscall8, (uint64_t function, uint64_t param1, uint64_t pa
 		case SYSCALL8_OPCODE_PS3MAPI:
 			switch ((int)param1)
 			{
-				//DPRINTF("syscall8: PS3M_API function 0x%x\n", (int)param1);
+				DPRINTF("syscall8: PS3M_API function 0x%x\n", (int)param1);
 
 				//----------
 				//CORE
@@ -1217,7 +1217,7 @@ LV2_SYSCALL2(int64_t, syscall8, (uint64_t function, uint64_t param1, uint64_t pa
 					return *(uint64_t *)param2;
 				break;
 				case PS3MAPI_OPCODE_LV2_POKE:
-					if(param2>0x8000000000352230)
+					if(param2>MKA(hash_checked_area))
 					{
 						*(uint64_t *)param2=param3;
 					}
@@ -1580,6 +1580,9 @@ LV2_SYSCALL2(int, sm_get_fan_policy_sc,(uint8_t id, uint8_t *st, uint8_t *policy
 static INLINE void apply_kernel_patches(void)
 {
     /// Adding HEN patches on init for stability /// -- START
+		#if defined (FIRMWARE_4_82DEX) ||  defined (FIRMWARE_4_84DEX)
+		do_patch(MKA(vsh_patch),0x386000014E800020);
+		#endif			
 	do_patch32(MKA(patch_func8_offset1),0x38600000); 
 	do_patch32(MKA(patch_func8_offset2 ),0x60000000);
 	do_patch32(MKA(user_thread_prio_patch),0x60000000);
