@@ -35,6 +35,8 @@
 
 SYS_MODULE_INFO(HENPLUGIN, 0, 1, 0);
 SYS_MODULE_START(henplugin_start);
+SYS_MODULE_STOP(henplugin_stop);
+SYS_MODULE_EXIT(henplugin_stop);
 
 #define THREAD_NAME "henplugin_thread"
 #define STOP_THREAD_NAME "henplugin_stop_thread"
@@ -224,6 +226,24 @@ typedef struct hen_config
 
 static void henplugin_thread(uint64_t arg)
 {
+	HEN_CONFIG CONFIG;
+	int fd;
+	uint64_t nread;
+	if(cellFsOpen("/dev_hdd0/HENCONFIG", CELL_FS_O_RDONLY, &fd, NULL, 0)==0)
+	{
+		cellFsRead(fd, &CONFIG, sizeof(HEN_CONFIG), &nread);
+		cellFsClose(fd);
+		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl1);
+		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl2);
+		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl3);
+		if(CONFIG.service_hdl4)
+		{
+			unregister_service(CONFIG.config_hdl,CONFIG.service_hdl4);
+		}
+		config_close(CONFIG.config_hdl);
+		cellFsUnlink("/dev_hdd0/HENCONFIG");
+	}
+	
 	View_Find = getNIDfunc("paf", 0xF21655F3, 0);
 	plugin_GetInterface = getNIDfunc("paf", 0x23AFB290, 0);
 	int view = View_Find("explore_plugin");
@@ -244,26 +264,9 @@ static void henplugin_thread(uint64_t arg)
 //	sys_timer_usleep(70000);
 	reload_xmb();
 	
-	HEN_CONFIG CONFIG;
-	int fd;
-	uint64_t nread;
-	if(cellFsOpen("/dev_hdd0/HENCONFIG", CELL_FS_O_RDONLY, &fd, NULL, 0)==0)
-	{
-		cellFsRead(fd, &CONFIG, sizeof(HEN_CONFIG), &nread);
-		cellFsClose(fd);
-		cellFsUnlink("/dev_hdd0/HENCONFIG");
-		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl1);
-		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl2);
-		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl3);
-		if(CONFIG.service_hdl4)
-		{
-			unregister_service(CONFIG.config_hdl,CONFIG.service_hdl4);
-		}
-		config_close(CONFIG.config_hdl);
-	}
-	
 	DPRINTF("Exiting main thread!\n");	
 	done=1;
+	
 	sys_ppu_thread_exit(0);
 }
 
@@ -274,4 +277,27 @@ int henplugin_start(uint64_t arg)
 	// Exit thread using directly the syscall and not the user mode library or we will crash
 	_sys_ppu_thread_exit(0);	
 	return SYS_PRX_RESIDENT;
+}
+
+static void henplugin_stop_thread(uint64_t arg)
+{
+	uint64_t exit_code;
+	sys_ppu_thread_join(thread_id, &exit_code);
+	sys_ppu_thread_exit(0);
+}
+
+int henplugin_stop(void)
+{
+	sys_ppu_thread_t t_id;
+	int ret = sys_ppu_thread_create(&t_id, henplugin_stop_thread, 0, 3000, 0x2000, SYS_PPU_THREAD_CREATE_JOINABLE, STOP_THREAD_NAME);
+
+	uint64_t exit_code;
+	if (ret == 0) sys_ppu_thread_join(t_id, &exit_code);
+
+	sys_timer_usleep(70000);
+	unload_prx_module();
+
+	_sys_ppu_thread_exit(0);
+
+	return SYS_PRX_STOP_OK;
 }

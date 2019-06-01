@@ -723,10 +723,12 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_6(int,sys_fs_open,(const char *path, int fla
 
 int sha1(uint8_t *buf, uint64_t size, uint8_t *out)
 {
-	SHACtx ctx_sha;
-	sha1_init(&ctx_sha);
-	sha1_update(&ctx_sha,buf,size);
-	sha1_final(out,&ctx_sha);
+	SHACtx *ctx;
+	page_allocate_auto(NULL, 0x100, 0x2F, (void *)&ctx);
+	sha1_init(ctx);
+	sha1_update(ctx,buf,size);
+	sha1_final(out,ctx);
+	page_free(NULL, (void *)ctx, 0x2F);
 	DPRINT_HEX(out, 20);
 	return 0;
 }
@@ -745,24 +747,25 @@ int sha1(uint8_t *buf, uint64_t size, uint8_t *out)
 * @param out Digest output
 * @param t   Size of digest output
 */
-SHACtx tctx;
-SHACtx ictx;
-SHACtx octx;
 void hmac_sha1(const uint8_t *k,  /* secret key */
         size_t lk,       /* length of the key in bytes */
         const uint8_t *d,  /* data */
         size_t ld,       /* length of data in bytes */
         uint8_t *out)      /* output buffer */ {
+    SHACtx *ictx=alloc(0x100,0x27);
+	SHACtx *octx=alloc(0x100,0x27);
     uint8_t isha[SHA_DIGEST_LENGTH];
     uint8_t key[SHA_DIGEST_LENGTH];
     uint8_t buf[SHA_BLOCKSIZE];
     size_t i;
 
     if (lk > SHA_BLOCKSIZE) {
+        SHACtx *tctx=alloc(0x100,0x27);
 
-        sha1_init(&tctx);
-        sha1_update(&tctx, k, lk);
-        sha1_final(key, &tctx);
+        sha1_init(tctx);
+        sha1_update(tctx, k, lk);
+        sha1_final(key, tctx);
+		dealloc(tctx,0x27);
 
         k = key;
         lk = SHA_DIGEST_LENGTH;
@@ -770,7 +773,7 @@ void hmac_sha1(const uint8_t *k,  /* secret key */
 
     /**** Inner Digest ****/
 
-    sha1_init(&ictx);
+    sha1_init(ictx);
 
     /* Pad the key for inner digest */
     for (i = 0; i < lk; ++i) {
@@ -780,14 +783,14 @@ void hmac_sha1(const uint8_t *k,  /* secret key */
         buf[i] = 0x36;
     }
 
-    sha1_update(&ictx, buf, SHA_BLOCKSIZE);
-    sha1_update(&ictx, d, ld);
+    sha1_update(ictx, buf, SHA_BLOCKSIZE);
+    sha1_update(ictx, d, ld);
 
-    sha1_final(isha, &ictx);
+    sha1_final(isha, ictx);
 
     /**** Outer Digest ****/
 
-    sha1_init(&octx);
+    sha1_init(octx);
 
     /* Pad the key for outter digest */
 
@@ -798,10 +801,13 @@ void hmac_sha1(const uint8_t *k,  /* secret key */
         buf[i] = 0x5c;
     }
 
-    sha1_update(&octx, buf, SHA_BLOCKSIZE);
-    sha1_update(&octx, isha, SHA_DIGEST_LENGTH);
+    sha1_update(octx, buf, SHA_BLOCKSIZE);
+    sha1_update(octx, isha, SHA_DIGEST_LENGTH);
 
-    sha1_final(out, &octx);
+    sha1_final(out, octx);
+
+	dealloc(ictx,0x27);
+	dealloc(octx,0x27);
 }
 
 uint8_t erk[0x20] = {
@@ -862,44 +868,48 @@ LV2_HOOKED_FUNCTION_COND_POSTCALL_3(int,read_eeprom_by_offset,(uint32_t offset, 
 	return DO_POSTCALL;
 }
 
-uint8_t tmp_buf_reactpsn[0x1038];
-
 LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64_t nbytes, uint64_t *nread))
 {	
 	if(rif_fd==fd)
 	{
-		DPRINTF("RIF fd read called\n");
+		DPRINTF("RIF fd read called:%x %x %x %x\n",fd,buf,nbytes,nread);
 		if(*nread==0x98)
 		{
 			DPRINTF("generating rif ECDSA\n");
-			memcpy(tmp_buf_reactpsn,buf,0x98);
+			uint8_t *buf1;
+			page_allocate_auto(NULL, 0x98, 0x2F, (void*)&buf1);
+			memcpy(buf1,buf,0x98);
 			uint8_t sha1_digest[20];
-			sha1(tmp_buf_reactpsn, 0x70,sha1_digest);
+			sha1(buf1, 0x70,sha1_digest);
 			uint8_t R[0x15];
 			uint8_t S[0x15];
 			ecdsa_sign(sha1_digest, R, S);
-			memcpy(tmp_buf_reactpsn+0x70, R+1, 0x14);
-			memcpy(tmp_buf_reactpsn+0x70+0x14, S+1, 0x14);
-			memcpy(buf+0x70,tmp_buf_reactpsn+0x70,0x28);
+			memcpy(buf1+0x70, R+1, 0x14);
+			memcpy(buf1+0x70+0x14, S+1, 0x14);
+			memcpy(buf+0x70,buf1+0x70,0x28);
+			page_free(NULL, buf1, 0x2F);
 			rif_fd=0;
 //			DPRINTF("R:%015x\nS:%015x\n",R,S);
 		}
 	}
 	else if(act_fd==fd)
 	{
-		DPRINTF("act fd read called\n");
+		DPRINTF("act fd read called:%x %x %x %x\n",fd,buf,nbytes,nread);
 		if(*nread==0x1038)
 		{
 			DPRINTF("generating act ECDSA\n");
-			memcpy(tmp_buf_reactpsn,buf,0x1038);
+			uint8_t *buf1;
+			page_allocate_auto(NULL, 0x1038, 0x2F, (void*)&buf1);
+			memcpy(buf1,buf,0x1038);
 			uint8_t sha1_digest[20];
-			sha1(tmp_buf_reactpsn, 0x1010,sha1_digest);
+			sha1(buf1, 0x1010,sha1_digest);
 			uint8_t R[0x15];
 			uint8_t S[0x15];
 			ecdsa_sign(sha1_digest, R, S);
-			memcpy(tmp_buf_reactpsn+0x1010, R+1, 0x14);
-			memcpy(tmp_buf_reactpsn+0x1010+0x14, S+1, 0x14);
-			memcpy(buf+0x1010,tmp_buf_reactpsn+0x1010,0x28);
+			memcpy(buf1+0x1010, R+1, 0x14);
+			memcpy(buf1+0x1010+0x14, S+1, 0x14);
+			memcpy(buf+0x1010,buf1+0x1010,0x28);
+			page_free(NULL, buf1, 0x2F);
 			act_fd=0;
 //			DPRINTF("R:%015x\nS:%015x\n",R,S);
 		}
@@ -909,21 +919,23 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64
 		if(*nread==0x100)
 		{
 			DPRINTF("generating misc ECDSA\n");
-			memcpy(tmp_buf_reactpsn,buf,0x100);
+			uint8_t *buf1;
+			page_allocate_auto(NULL, 0x100, 0x2F, (void*)&buf1);
+			memcpy(buf1,buf,0x100);
 			uint8_t sha1_digest[20];
-			sha1(tmp_buf_reactpsn, 0xd8,sha1_digest);
+			sha1(buf1, 0xd8,sha1_digest);
 			uint8_t R[0x15];
 			uint8_t S[0x15];
 			ecdsa_sign(sha1_digest, R, S);
-			memcpy(tmp_buf_reactpsn+0xd8, R+1, 0x14);
-			memcpy(tmp_buf_reactpsn+0xd8+0x14, S+1, 0x14);
-			memcpy(buf+0xd8,tmp_buf_reactpsn+0xd8,0x28);
+			memcpy(buf1+0xd8, R+1, 0x14);
+			memcpy(buf1+0xd8+0x14, S+1, 0x14);
+			memcpy(buf+0xd8,buf1+0xd8,0x28);
+			page_free(NULL, buf1, 0x2F);
 			misc_fd=0;
 		}
 	}
 	return 0;
 }
-
 
 int unload_plugin_kernel(uint64_t residence)
 {

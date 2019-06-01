@@ -32,7 +32,8 @@ uint8_t photo_gui = 1;
 void map_first_slot(char *old, char *newp)
 {
 	map_table[0].oldpath=old;
-	map_table[0].newpath=newp;
+	map_table[0].newpath = alloc(MAX_PATH, 0x27);
+	strncpy(map_table[0].newpath, newp, MAX_PATH-1);
 	map_table[0].newpath_len=strlen(newp);
 	map_table[0].oldpath_len = strlen(old);
 	map_table[0].flags = 0;
@@ -237,9 +238,9 @@ int read_text_line(int fd, char *line, unsigned int size, int *eof);
 
 static int __initialized_lists = 0; // Are the lists initialized ?
 static int __blacklist_entries = 0; // Module global var to hold the current blacklist entries.
-static char __blacklist[9*MAX_LIST_ENTRIES];
+static char *__blacklist;
 static int __whitelist_entries = 0; // Module global var to hold the current whitelist entries.
-static char __whitelist[9*MAX_LIST_ENTRIES];
+static char *__whitelist;
 
 
 //
@@ -295,6 +296,8 @@ static int listed(int blacklist, char *gameid)
 		int i, elements;
 		if (!__initialized_lists)
 		{
+			__blacklist=alloc(9*MAX_LIST_ENTRIES,0x27);
+			__whitelist=alloc(9*MAX_LIST_ENTRIES,0x27);
 			__blacklist_entries = init_list(__blacklist, BLACKLIST_FILENAME, MAX_LIST_ENTRIES);
 			__whitelist_entries = init_list(__whitelist, WHITELIST_FILENAME, MAX_LIST_ENTRIES);
 			__initialized_lists = 1;
