@@ -25,6 +25,7 @@
 #define EMULATOR_DRM_HASH				0xbbb8800000005000
 #define EMULATOR_DRM_DATA_HASH			0x2f3ab00000010000
 #define LIBSYSUTIL_SAVEDATA_PSP_HASH	0x0dfdc00000003000
+#define LIBAUDIO_HASH				0x2200600000002000
 //// Currently unused ////
 #define VSH_HASH						0xb6b6d000002e0000
 #define BASIC_PLUGINS_HASH				0x55f4700000010000
@@ -147,6 +148,9 @@
 /* libfs */
 #define aio_copy_root_offset			0xD658
 
+/* libaudio */
+#define bt_usb_audio_offset					0xF80
+
 #elif defined(FIRMWARE_4_82DEX) || defined(FIRMWARE_4_84DEX) // TODO
 
 #define BDP_DISC_CHECK_PLUGIN_HASH		0x9940000000003000
@@ -168,6 +172,7 @@
 #define EMULATOR_DRM_HASH				0xbbb8800000005000
 #define EMULATOR_DRM_DATA_HASH			0x2f3ab00000010000
 #define LIBSYSUTIL_SAVEDATA_PSP_HASH	0x0dfdc00000003000
+#define LIBAUDIO_HASH				0x2200600000002000
 //// Currently unused ////
 #define VSH_HASH						0xb6b6d000002e0000
 #define BASIC_PLUGINS_HASH				0x55f4700000010000
@@ -286,6 +291,9 @@
 
 /* libfs */
 #define aio_copy_root_offset			0xD658
+
+/* libaudio */
+#define bt_usb_audio_offset					0xF80
 
 #endif /* FIRMWARE */
 

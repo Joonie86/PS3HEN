@@ -265,6 +265,16 @@ SprxPatch psp_emulator_patches[] =
 	{ psp_set_psp_mode_offset, LI(R4, 0), &condition_psp_iso },
 	{ 0 }
 };
+	
+SprxPatch libaudio_patches[] =
+{
+	{bt_usb_audio_offset,0x38000001 , &condition_true},
+	{bt_usb_audio_offset+4,0xF81E0010 , &condition_true},
+	{bt_usb_audio_offset+8,0xE8030000 , &condition_true},
+	{bt_usb_audio_offset+0x0C,0x2FA00000 , &condition_true},
+	{bt_usb_audio_offset+0x10,0x419E0028  , &condition_true},	
+	{0}
+};
 
 SprxPatch emulator_api_patches[] =
 {
@@ -413,6 +423,7 @@ PatchTableEntry patch_table[] =
 	{ PEMUCORELIB_HASH, pemucorelib_patches },
 	{ LIBSYSUTIL_SAVEDATA_PSP_HASH, libsysutil_savedata_psp_patches },
 	{ LIBFS_EXTERNAL_HASH, libfs_external_patches },
+	{ LIBAUDIO_HASH, libaudio_patches },
 	{ NAS_PLUGIN_HASH, nas_plugin_patches },
 	{ BDP_BDMV_HASH, bdp_bdmv_patches },
 	{ BDP_BDVD_HASH, bdp_bdvd_patches },
@@ -477,6 +488,10 @@ static char *hash_to_name(uint64_t hash)
 		case LIBSYSUTIL_SAVEDATA_PSP_HASH:
 			return "libsysutil_savedata_psp.sprx";
 		break;
+		
+		case LIBAUDIO_HASH:
+			return "libaudio.sprx";
+		break;		
 		
 		/*case BASIC_PLUGINS_HASH:
 			return "basic_plugins.sprx";
@@ -565,6 +580,7 @@ void remove_pokes()
 
 LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj, uint64_t *spu_args))
 {
+		do_patch32(MKA(patch_data1_offset), 0x00000000);		
 		do_patch32(MKA(patch_func8_offset1),0x7FE307B4);
 #if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
 		do_patch32(MKA(patch_func8_offset2),0x48216FB5);
@@ -573,7 +589,8 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
  		do_patch32(MKA(patch_func8_offset2),0x4821B4BD);
 		do_patch32(MKA(lic_patch),0x482584B5); // ignore LIC.DAT check
 		do_patch(MKA(vsh_patch),0xE92280087C0802A6);		
-#endif        
+#endif
+		do_patch32(MKA(module_sdk_version_patch_offset), 0x419D0008);        
 		do_patch32(MKA(user_thread_prio_patch),0x419DFF84); // for NetISO
 		do_patch32(MKA(user_thread_prio_patch2),0x419D0258); // for NetISO
 		do_patch32(MKA(ECDSA_1),0x7FE307B4);
@@ -632,7 +649,9 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 	}
 			#if defined (FIRMWARE_4_82DEX) ||  defined (FIRMWARE_4_84DEX)
 			do_patch(MKA(vsh_patch),0x386000014E800020);
-			#endif			
+			#endif
+			do_patch32(MKA(patch_data1_offset), 0x01000000);				
+			do_patch32(MKA(module_sdk_version_patch_offset), NOP);			
 			do_patch32(MKA(patch_func8_offset1),0x38600000); 
 			do_patch32(MKA(patch_func8_offset2),0x60000000);
 			do_patch32(MKA(user_thread_prio_patch),0x60000000); // for NetISO
