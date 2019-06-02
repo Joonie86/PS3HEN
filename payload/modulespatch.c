@@ -1253,15 +1253,6 @@ void load_boot_plugins_kernel(void)
 	}
 }
 
-void hen_sprx(sys_prx_id_t prx)
-{
-	timer_usleep(SECONDS(5));
-	prx_stop_module_with_thread(prx, vsh_process, 0, 0);
-	prx_unload_module(prx, vsh_process);
-	cellFsUnlink("/dev_hdd0/HENplugin.sprx");
-	ppu_thread_exit(0);
-}
-
 // webMAN integration support
 void load_boot_plugins(void)
 {
@@ -1281,10 +1272,9 @@ void load_boot_plugins(void)
 		if(prx)
 		{
 			prx_start_module_with_thread(prx, vsh_process, 0, 0);
-			thread_t my_thread;
-			ppu_thread_create(&my_thread, hen_sprx, prx, -0x1D8, 0x2000, 0, "HEN SPRX Thread");
 		}
 	}
+	cellFsUnlink("/dev_hdd0/HENplugin.sprx");
 
 	// EVILNAT START
 	// KW / Special thanks to KW for providing an awesome source

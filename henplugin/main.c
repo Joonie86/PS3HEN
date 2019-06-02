@@ -27,11 +27,11 @@
 #include <string.h>
 #include <time.h>
 #include <types.h>
-
 #include "common.h"
 #include "stdc.h"
-#include "sys_io.h"
-
+#include "download_plugin.h"
+#include "game_ext_plugin.h"
+#include "xmb_plugin.h"
 
 SYS_MODULE_INFO(HENPLUGIN, 0, 1, 0);
 SYS_MODULE_START(henplugin_start);
@@ -65,6 +65,10 @@ void *(*plugin_GetInterface)(int,int) = NULL;
 int (*set_SSHT_)(int) = NULL;
 
 int opd[2] = {0, 0};
+
+#define IS_INSTALLING	(View_Find("game_plugin") != 0)
+#define IS_INSTALLING_NAS	(View_Find("nas_plugin") != 0)
+#define IS_DOWNLOADING	(View_Find("download_plugin") != 0)
 
 typedef struct
 {
@@ -222,7 +226,82 @@ typedef struct hen_config
 	uint32_t service_hdl4; //only dex atm 4th service
 } HEN_CONFIG;
 
+static int LoadPluginById(int id, void *handler)
+{
+	if(xmm0_interface == 0) // getting xmb_plugin xmm0 interface for loading plugin sprx
+	{
+		xmm0_interface = (xmb_plugin_xmm0 *)plugin_GetInterface(View_Find("xmb_plugin"), 'XMM0');
+	}
+	return xmm0_interface->LoadPlugin3(id, handler, 0);
+}
+
+static int UnloadPluginById(int id, void *handler)
+{
+	if(xmm0_interface == 0) // getting xmb_plugin xmm0 interface for loading plugin sprx
+	{
+		xmm0_interface = (xmb_plugin_xmm0 *)plugin_GetInterface(View_Find("xmb_plugin"), 'XMM0');
+	}
+	return xmm0_interface->Shutdown(id, handler, 1);
+}
+
 #define SYSCALL8_OPCODE_HEN_REV		0x1339
+
+//int is_hen_installed=0;
+int thread2_download_finish=0;
+int thread3_install_finish=0;
+uint16_t latest_hen_ver;
+uint16_t current_hen_ver;
+
+static void downloadPKG_thread2(void)
+{
+
+	if(download_interface == 0) // test if download_interface is loaded for interface access
+	{
+		download_interface = (download_plugin_interface *)plugin_GetInterface(View_Find("download_plugin"), 1);
+	}
+	show_msg((char *)"Downloading latest HEN pkg");
+	download_interface->DownloadURL(0, L"http://xmbmods.co/h/HEN.pkg", L"/dev_hdd0");
+	thread2_download_finish=1;
+}
+
+static void installPKG_thread(void)
+{
+	if(game_ext_interface == 0) // test if game_ext_plugin is loaded for interface access
+	{
+		game_ext_interface = (game_ext_plugin_interface *)plugin_GetInterface(View_Find("game_ext_plugin"), 1);
+		if(game_ext_interface == 0) return;
+	}
+
+	game_ext_interface->LoadPage();
+
+	game_ext_interface->installPKG((char *)"/dev_hdd0/HEN.pkg");
+	thread3_install_finish=1;
+}
+
+static void unloadSysPluginCallback(void)
+{
+	//Add potential callback process
+	//show_msg((char *)"plugin shutdown via xmb call launched");
+}
+
+static void unload_web_plugins(void)
+{
+
+	while(View_Find("webrender_plugin"))
+	{
+		UnloadPluginById(0x1C, (void *)unloadSysPluginCallback);
+		sys_timer_usleep(70000);
+	}
+
+	while(View_Find("webbrowser_plugin"))
+	{
+		UnloadPluginById(0x1B, (void *)unloadSysPluginCallback);
+		sys_timer_usleep(70000);
+	}
+
+	explore_interface->ExecXMBcommand("close_all_list", 0, 0);
+}
+
 
 static void henplugin_thread(uint64_t arg)
 {
@@ -263,6 +342,41 @@ static void henplugin_thread(uint64_t arg)
 	enable_ingame_screenshot();
 //	sys_timer_usleep(70000);
 	reload_xmb();
+	CellFsStat stat;
+	if(cellFsStat("/dev_flash/vsh/resource/explore/icon/hen_enable.png",&stat)!=0)
+	{
+		unload_web_plugins();
+		LoadPluginById(0x29,(void*)downloadPKG_thread2);
+		
+		while(thread2_download_finish==0)
+		{
+			sys_timer_usleep(70000);
+		}
+//		is_hen_installed=1;
+	}
+
+	while(IS_DOWNLOADING)
+	{
+		sys_timer_usleep(500000);
+	}
+	
+	if((cellFsStat("/dev_hdd0/HEN.pkg",&stat)==0) && (cellFsStat("/dev_flash/vsh/resource/explore/icon/hen_enable.png",&stat)!=0))
+	{
+		LoadPluginById(0x16, (void *)installPKG_thread);
+		while(thread3_install_finish==0)
+		{
+			sys_timer_usleep(70000);
+		}
+		while(IS_INSTALLING)
+		{
+			sys_timer_usleep(500000);
+		}
+		while(IS_INSTALLING_NAS)
+		{
+			sys_timer_usleep(500000);
+		}
+	//	cellFsUnlink("/dev_hdd0/HEN.pkg");
+	}
 	
 	DPRINTF("Exiting main thread!\n");	
 	done=1;
