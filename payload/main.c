@@ -1584,7 +1584,7 @@ static INLINE void apply_kernel_patches(void)
 		#if defined (FIRMWARE_4_82DEX) ||  defined (FIRMWARE_4_84DEX)
 		do_patch(MKA(vsh_patch),0x386000014E800020);
 		#endif
-	do_patch32(MKA(patch_data1_offset), 0x01000000);	
+	//do_patch32(MKA(patch_data1_offset), 0x01000000);	
 	do_patch32(MKA(module_sdk_version_patch_offset), NOP);
 	do_patch32(MKA(patch_func8_offset1),0x38600000); 
 	do_patch32(MKA(patch_func8_offset2 ),0x60000000);

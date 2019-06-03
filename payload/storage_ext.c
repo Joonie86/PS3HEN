@@ -147,7 +147,7 @@ static event_port_t proxy_command_port;
 static event_queue_t proxy_result_queue;
 
 static int discfd = -1;
-static int disc_emulation;
+int disc_emulation;
 static int emu_ps3_rec = 0; // Support for burned PS3 DVD/BD Discs by deank
 static int total_emulation;
 static int skip_emu_check = 0;

@@ -98,6 +98,8 @@
 #define event_queue_destroy_symbol						0x13308
 #define event_queue_receive_symbol						0x1314C
 #define event_queue_tryreceive_symbol					0x13218
+#define event_queue_buff_not_recieved_symbol					0x4ef5c
+#define self_threading_symbol					0x2cc8c
 
 #define cellFsOpen_symbol								0x297900
 #define cellFsClose_symbol								0x297768
@@ -365,6 +367,8 @@
 #define event_queue_destroy_symbol						0x13958
 #define event_queue_receive_symbol						0x1379C
 #define event_queue_tryreceive_symbol					0x13868
+#define event_queue_buff_not_recieved_symbol					0x52904
+#define self_threading_symbol					0x2ED50
 
 #define cellFsOpen_symbol								0x2B2898
 #define cellFsClose_symbol								0x2B2700

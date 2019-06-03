@@ -147,7 +147,7 @@ SprxPatch explore_plugin_patches[] =
 	{ app_home_offset+4, 0x5f626476, &condition_apphome }, 
 	{ app_home_offset+8, 0x642f5053, &condition_apphome }, 
 	//{ ps2_nonbw_offset, LI(0, 1), &condition_ps2softemu },
-	//// Devil303's What's New ///
+/*	//// Devil303's What's New ///
 	{whatsnew_offset, 0x68747470, &condition_true	},
 	{whatsnew_offset+4, 0x3A2F2F77, &condition_true	},
 	{whatsnew_offset+8, 0x77772E78, &condition_true	},
@@ -157,7 +157,7 @@ SprxPatch explore_plugin_patches[] =
 	{whatsnew_offset+0x18, 0x6174735F, &condition_true	},	
 	{whatsnew_offset+0x1C, 0x6E65772E, &condition_true},	
 	{whatsnew_offset+0x20, 0x786D6C00, &condition_true},
-	{whatsnew_offset+0x24, 0, &condition_true},
+	{whatsnew_offset+0x24, 0, &condition_true},*/
 	{ 0 }
 };
 
@@ -578,9 +578,14 @@ void remove_pokes()
 	}
 }*/
 
+extern int disc_emulation;
+
 LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj, uint64_t *spu_args))
 {
+	if(disc_emulation!=EMU_OFF)
+	{
 		do_patch32(MKA(patch_data1_offset), 0x00000000);		
+		//do_patch32(MKA(patch_data1_offset), 0x00000000);		
 		do_patch32(MKA(patch_func8_offset1),0x7FE307B4);
 #if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
 		do_patch32(MKA(patch_func8_offset2),0x48216FB5);
@@ -620,6 +625,7 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 #ifdef DEBUG		
 		debug_uninstall();
 		#endif
+	}
 	process_t process = get_current_process();
 
 	saved_buf = (void *)spu_args[0x20/8];
@@ -638,19 +644,21 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 	//uint64_t is_ptr=((uint64_t)saved_sce_hdr&0xff00000000000000);
 	//DPRINTF("IS_PTR:%x\n",is_ptr);
 	
+		if(disc_emulation!=EMU_OFF)
+	{
 	if(is_ptr==0x80) //new
 	//if(is_ptr>=0x8000000000000000)
 	{
 		if((*(uint64_t *)(saved_sce_hdr+0x48)>=0x200) || (*(uint64_t *)(saved_sce_hdr+0x48)==0x130))
 		{
 			DPRINTF("SELF loading!\n");
-			timer_usleep(625000);
+				timer_usleep(500000);
 		}
 	}
 			#if defined (FIRMWARE_4_82DEX) ||  defined (FIRMWARE_4_84DEX)
 			do_patch(MKA(vsh_patch),0x386000014E800020);
 			#endif
-			do_patch32(MKA(patch_data1_offset), 0x01000000);				
+			//do_patch32(MKA(patch_data1_offset), 0x01000000);				
 			do_patch32(MKA(module_sdk_version_patch_offset), NOP);			
 			do_patch32(MKA(patch_func8_offset1),0x38600000); 
 			do_patch32(MKA(patch_func8_offset2),0x60000000);
@@ -684,6 +692,7 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 			hook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
 			hook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
 #endif			
+	}
 	return 0;
 }
 
@@ -1364,10 +1373,109 @@ LV2_HOOKED_FUNCTION_POSTCALL_8(void, create_process_common_hooked_pre, (process_
 
 #endif
 
+LV2_PATCHED_FUNCTION(uint64_t, self_threading, (uint64_t r3, uint64_t r4, uint64_t r5, uint64_t r6, uint64_t r7))
+{
+		f_desc_t f;
+		f.addr=(void*)MKA(self_threading_symbol);
+		f.toc=(void*)MKA(TOC);
+		uint64_t(*func)(uint64_t r3, uint64_t r4, uint64_t r5, uint64_t r6,uint64_t r7)=(void*)&f;
+	
+	if (disc_emulation != EMU_OFF)
+	{
+		return func(r3,r4,r5,r6,r7);
+	}
+	
+	DPRINTF("event queue buffer self: %016llx %016llx %016llx %016llx %016llx\n",r3,r4,r5,r6,r7);
+			//do_patch32(MKA(patch_data1_offset), 0x00000000);		
+		do_patch32(MKA(patch_func8_offset1),0x7FE307B4);
+#if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
+		do_patch32(MKA(patch_func8_offset2),0x48216FB5);
+		do_patch32(MKA(lic_patch),0x48240EED); // ignore LIC.DAT check
+#elif defined (FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)
+ 		do_patch32(MKA(patch_func8_offset2),0x4821B4BD);
+		do_patch32(MKA(lic_patch),0x482584B5); // ignore LIC.DAT check
+		do_patch(MKA(vsh_patch),0xE92280087C0802A6);		
+#endif
+		do_patch32(MKA(module_sdk_version_patch_offset), 0x419D0008);        
+		do_patch32(MKA(user_thread_prio_patch),0x419DFF84); // for NetISO
+		do_patch32(MKA(user_thread_prio_patch2),0x419D0258); // for NetISO
+		do_patch32(MKA(ECDSA_1),0x7FE307B4);
+		do_patch32(MKA(patch_func9_offset),0x419e00ac);
+		do_patch32(MKA(fix_80010009),0x419e00ac);
+		do_patch(MKA(ode_patch),0xE86900007C6307B4); // fix 0x8001002B / 80010017 errors  known as ODE patch
+		do_patch(MKA(ECDSA_2),0xF821FE617CE802A6);
+		do_patch(MKA(mem_base2),0xF821FEB17C0802A6); // psjailbreak, PL3, etc destroy this function to copy their code there.
+		do_patch(MKA(fix_8001003D),0x63FF003D419EFFD4);
+		do_patch(MKA(fix_8001003E),0x3FE0800163FF003E);
+		do_patch(MKA(PATCH_JUMP),0x2F840004409C0048);
+
+		*(uint64_t *)MKA(ECDSA_FLAG)=0;
+		unhook_all_modules();
+		
+		unhook_all_storage_ext();
+		unhook_all_region();
+		unhook_all_map_path();
+		unhook_function_with_precall(get_syscall_address(801),sys_fs_open,6);
+		unhook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
+	//	remove_pokes();
+#if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)
+		unhook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
+		unhook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
+#endif
+
+#ifdef DEBUG		
+		debug_uninstall();
+		#endif
+		
+		uint64_t ret=func(r3,r4,r5,r6,r7);
+		
+					#if defined (FIRMWARE_4_82DEX) ||  defined (FIRMWARE_4_84DEX)
+			do_patch(MKA(vsh_patch),0x386000014E800020);
+			#endif
+			//do_patch32(MKA(patch_data1_offset), 0x01000000);				
+			do_patch32(MKA(module_sdk_version_patch_offset), NOP);			
+			do_patch32(MKA(patch_func8_offset1),0x38600000); 
+			do_patch32(MKA(patch_func8_offset2),0x60000000);
+			do_patch32(MKA(user_thread_prio_patch),0x60000000); // for NetISO
+			do_patch32(MKA(user_thread_prio_patch2),0x60000000); // for NetISO
+			do_patch32(MKA(ECDSA_1),0x38600000);
+			do_patch32(MKA(lic_patch),0x38600001); // ignore LIC.DAT check	
+			do_patch32(MKA(patch_func9_offset),0x60000000);
+			do_patch32(MKA(fix_80010009),0x60000000);
+			do_patch(MKA(ode_patch),0x38600000F8690000); // fix 0x8001002B / 80010017 errors  known as ODE patch
+			do_patch(MKA(ECDSA_2),0x386000004e800020);
+			do_patch(MKA(mem_base2),0x386000014e800020); // psjailbreak, PL3, etc destroy this function to copy their code there.
+			do_patch(MKA(fix_8001003D),0x63FF003D60000000);
+			do_patch(MKA(fix_8001003E),0x3FE080013BE00000);
+			do_patch(MKA(PATCH_JUMP),0x2F84000448000098);
+			
+			*(uint64_t *)MKA(ECDSA_FLAG)=0;
+		//	do_pokes();
+		//	*(uint64_t *)(r4+8)=0; //ecdsa flag
+		#ifdef DEBUG
+		debug_hook();
+		#endif
+			region_patches();
+			modules_patch_init();
+			map_path_patches(0);
+			
+			storage_ext_patches();
+			hook_function_with_precall(get_syscall_address(801),sys_fs_open,6);
+			hook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
+#if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)			
+			hook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
+			hook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
+#endif	
+
+		return ret;
+}
+	
+
 void modules_patch_init(void)
 {
 	hook_function_with_precall(lv1_call_99_wrapper_symbol, post_lv1_call_99_wrapper, 2);
 	patch_call(patch_func2_offset, modules_patching);
+	patch_call(event_queue_buff_not_recieved_symbol, self_threading);
 	hook_function_with_cond_postcall(modules_verification_symbol, pre_modules_verification, 2);
 	hook_function_with_postcall(map_process_memory_symbol, pre_map_process_memory, 7);
 }
@@ -1377,9 +1485,12 @@ void unhook_all_modules(void)
 	suspend_intr();
 #if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)		
 	*(uint32_t *)MKA(patch_func2_offset)=0x4BFDABC1;
+	*(uint32_t *)MKA(event_queue_buff_not_recieved_symbol)=0x4BFDDD31; // CEX
 #elif defined(FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)	
 	*(uint32_t *)MKA(patch_func2_offset)=0x4BFDAB11;
+	*(uint32_t *)MKA(event_queue_buff_not_recieved_symbol)=0x4BFDC44D; // DEX
 #endif
+	clear_icache((void *)MKA(event_queue_buff_not_recieved_symbol),4);
 	clear_icache((void *)MKA(patch_func2_offset),4);
 	unhook_function_with_precall(lv1_call_99_wrapper_symbol, post_lv1_call_99_wrapper, 2);
 	unhook_function_with_cond_postcall(modules_verification_symbol, pre_modules_verification, 2);
