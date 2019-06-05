@@ -20,6 +20,8 @@
 #include "storage_ext.h"
 #include "scsi.h"
 #include "config.h"
+#include "region.h"
+#include "mappath.h"
 
 //#define ps2emu_entry1_bc 0x165B44 
 //#define ps2emu_entry2_bc 0x165CC0
@@ -140,8 +142,8 @@ typedef struct _DiscFileProxy
 
 
 static mutex_t mutex;
-static event_port_t command_port, result_port;
-static event_queue_t command_queue, result_queue;
+event_port_t command_port, result_port;
+event_queue_t command_queue, result_queue;
 
 static event_port_t proxy_command_port;
 static event_queue_t proxy_result_queue;
@@ -960,6 +962,105 @@ uint32_t find_file_sector(uint8_t *buf, char *file)
 	return 0;
 }
 
+int sys_fs_open(const char *path, int flags, int *fd, uint64_t mode, const void *arg, uint64_t size);
+int sys_fs_read(int fd, void *buf, uint64_t nbytes, uint64_t *nread);
+void debug_install(void);
+void debug_uninstall(void);
+int um_if_get_token(uint8_t *token,uint32_t token_size,uint8_t *seed,uint32_t seed_size);
+int read_eeprom_by_offset(uint32_t offset, uint8_t *value, uint64_t auth_id);
+void do_patch(uint64_t addr, uint64_t patch);
+void do_patch32(uint64_t addr, uint32_t patch);
+void unhook_all_modules(void);
+
+int enable_patches()
+{
+	DPRINTF("enabling patches!\n");
+				#if defined (FIRMWARE_4_82DEX) ||  defined (FIRMWARE_4_84DEX)
+			do_patch(MKA(vsh_patch),0x386000014E800020);
+			#endif
+			//do_patch32(MKA(patch_data1_offset), 0x01000000);				
+			do_patch32(MKA(module_sdk_version_patch_offset), NOP);			
+			do_patch32(MKA(patch_func8_offset1),0x38600000); 
+			do_patch32(MKA(patch_func8_offset2),0x60000000);
+			do_patch32(MKA(user_thread_prio_patch),0x60000000); // for NetISO
+			do_patch32(MKA(user_thread_prio_patch2),0x60000000); // for NetISO
+			do_patch32(MKA(ECDSA_1),0x38600000);
+			do_patch32(MKA(lic_patch),0x38600001); // ignore LIC.DAT check	
+			do_patch32(MKA(patch_func9_offset),0x60000000);
+			do_patch32(MKA(fix_80010009),0x60000000);
+			do_patch(MKA(ode_patch),0x38600000F8690000); // fix 0x8001002B / 80010017 errors  known as ODE patch
+			do_patch(MKA(ECDSA_2),0x386000004e800020);
+			do_patch(MKA(mem_base2),0x386000014e800020); // psjailbreak, PL3, etc destroy this function to copy their code there.
+			do_patch(MKA(fix_8001003D),0x63FF003D60000000);
+			do_patch(MKA(fix_8001003E),0x3FE080013BE00000);
+			do_patch(MKA(PATCH_JUMP),0x2F84000448000098);
+			
+			*(uint64_t *)MKA(ECDSA_FLAG)=0;
+		//	do_pokes();
+		//	*(uint64_t *)(r4+8)=0; //ecdsa flag
+		#ifdef DEBUG
+		debug_hook();
+		#endif
+			region_patches();
+			modules_patch_init();
+			map_path_patches(0);
+			
+			storage_ext_patches();
+			hook_function_with_precall(get_syscall_address(801),sys_fs_open,6);
+			hook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
+#if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)			
+			hook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
+			hook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
+#endif			
+
+	return 0;
+}
+
+int disable_patches()
+{
+	DPRINTF("disabling patches\n");
+			do_patch32(MKA(patch_func8_offset1),0x7FE307B4);
+#if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
+		do_patch32(MKA(patch_func8_offset2),0x48216FB5);
+		do_patch32(MKA(lic_patch),0x48240EED); // ignore LIC.DAT check
+#elif defined (FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)
+ 		do_patch32(MKA(patch_func8_offset2),0x4821B4BD);
+		do_patch32(MKA(lic_patch),0x482584B5); // ignore LIC.DAT check
+		do_patch(MKA(vsh_patch),0xE92280087C0802A6);		
+#endif
+		do_patch32(MKA(module_sdk_version_patch_offset), 0x419D0008);        
+		do_patch32(MKA(user_thread_prio_patch),0x419DFF84); // for NetISO
+		do_patch32(MKA(user_thread_prio_patch2),0x419D0258); // for NetISO
+		do_patch32(MKA(ECDSA_1),0x7FE307B4);
+		do_patch32(MKA(patch_func9_offset),0x419e00ac);
+		do_patch32(MKA(fix_80010009),0x419e00ac);
+		do_patch(MKA(ode_patch),0xE86900007C6307B4); // fix 0x8001002B / 80010017 errors  known as ODE patch
+		do_patch(MKA(ECDSA_2),0xF821FE617CE802A6);
+		do_patch(MKA(mem_base2),0xF821FEB17C0802A6); // psjailbreak, PL3, etc destroy this function to copy their code there.
+		do_patch(MKA(fix_8001003D),0x63FF003D419EFFD4);
+		do_patch(MKA(fix_8001003E),0x3FE0800163FF003E);
+		do_patch(MKA(PATCH_JUMP),0x2F840004409C0048);
+
+		*(uint64_t *)MKA(ECDSA_FLAG)=0;
+		unhook_all_modules();
+		
+		unhook_all_storage_ext();
+		unhook_all_region();
+		unhook_all_map_path();
+		unhook_function_with_precall(get_syscall_address(801),sys_fs_open,6);
+		unhook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
+	//	remove_pokes();
+#if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)
+		unhook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
+		unhook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
+#endif
+
+#ifdef DEBUG		
+		debug_uninstall();
+		#endif
+		return 0;
+}
+
 void dispatch_thread_entry(uint64_t arg)
 {
 	int ret;
@@ -1008,6 +1109,14 @@ void dispatch_thread_entry(uint64_t arg)
 
 			case CMD_FAKE_STORAGE_EVENT:
 				cmd_result = process_fake_storage_event_cmd((FakeStorageEventCmd *)event.data2);
+			break;
+			
+			case CMD_ENABLE_PATCHES:
+				cmd_result=enable_patches();
+			break;
+			
+			case CMD_DISABLE_PATCHES:
+				cmd_result=disable_patches();
 			break;
 		}
 

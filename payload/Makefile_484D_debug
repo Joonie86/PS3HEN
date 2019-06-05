@@ -55,7 +55,7 @@ endif
 
 all: $(OUTPUT)
 	@mv stage2.bin ../stage2.bin_debug_484D
-	@rm -f *.o *.elf *.map *.lzma ../lv2/src/*.o ../lv1/src/*.o ../debug/src/*.o
+	@rm -f *.o *.map *.lzma ../lv2/src/*.o ../lv1/src/*.o ../debug/src/*.o
 
 objdump: $(OUTPUT)
 	$(OBJDUMP) -D -EB -b binary -m powerpc:common64 $(OUTPUT)	
