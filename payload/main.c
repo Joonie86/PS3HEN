@@ -872,7 +872,7 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64
 {	
 	if(rif_fd==fd)
 	{
-		DPRINTF("RIF fd read called:%x %x %x %x\n",fd,buf,nbytes,nread);
+		DPRINTF("RIF fd read called:%x %p %016lx %p\n",fd,buf,nbytes,nread);
 		if(*nread==0x98)
 		{
 			DPRINTF("generating rif ECDSA\n");
@@ -894,7 +894,7 @@ LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_4(int,sys_fs_read,(int fd, void *buf, uint64
 	}
 	else if(act_fd==fd)
 	{
-		DPRINTF("act fd read called:%x %x %x %x\n",fd,buf,nbytes,nread);
+		DPRINTF("act fd read called:%x %p %016lx %p\n\n",fd,buf,nbytes,nread);
 		if(*nread==0x1038)
 		{
 			DPRINTF("generating act ECDSA\n");

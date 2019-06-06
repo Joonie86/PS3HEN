@@ -189,7 +189,7 @@ static inline sys_prx_id_t prx_get_module_id_by_address(void *addr)
 	return (int)p1;
 }
 
-static inline int unregister_service(uint32_t config_hdl,uint32_t service_hdl)
+static int unregister_service(uint32_t config_hdl,uint32_t service_hdl)
 {
 	system_call_2(0x20a, config_hdl,service_hdl);
 	return (int)p1;
@@ -236,7 +236,7 @@ static int LoadPluginById(int id, void *handler)
 {
 	if(xmm0_interface == 0) // getting xmb_plugin xmm0 interface for loading plugin sprx
 	{
-		xmm0_interface = (xmb_plugin_xmm0 *)plugin_GetInterface(View_Find("xmb_plugin"), 'XMM0');
+		xmm0_interface = (xmb_plugin_xmm0 *)plugin_GetInterface(View_Find("xmb_plugin"), (int) "XMM0");
 	}
 	return xmm0_interface->LoadPlugin3(id, handler, 0);
 }
@@ -245,7 +245,7 @@ static int UnloadPluginById(int id, void *handler)
 {
 	if(xmm0_interface == 0) // getting xmb_plugin xmm0 interface for loading plugin sprx
 	{
-		xmm0_interface = (xmb_plugin_xmm0 *)plugin_GetInterface(View_Find("xmb_plugin"), 'XMM0');
+		xmm0_interface = (xmb_plugin_xmm0 *)plugin_GetInterface(View_Find("xmb_plugin"), (int) "XMM0");
 	}
 	return xmm0_interface->Shutdown(id, handler, 1);
 }
@@ -260,7 +260,7 @@ uint16_t current_hen_ver;
 
 #define SYSCALL_PEEK	6
 	
-uint64_t peekq(uint64_t addr)
+static uint64_t peekq(uint64_t addr)
 {
 	system_call_1(SYSCALL_PEEK, addr);
 	return_to_user_prog(uint64_t);
@@ -278,11 +278,11 @@ static void downloadPKG_thread2(void)
 	
 	if(peekq(0x80000000002FCB68ULL)==0x323031372F30382FULL) 
 		{
-			download_interface->DownloadURL(0, L"http://ps3xploit.com/hen/release/482/cex/installer/Latest_HEN_Installer_signed.pkg", L"/dev_hdd0");
+			download_interface->DownloadURL(0, (wchar_t *) L"http://ps3xploit.com/hen/release/482/cex/installer/Latest_HEN_Installer_signed.pkg", (wchar_t *) L"/dev_hdd0");
 		}
 	else if(peekq(0x80000000002FCB68ULL)==0x323031392F30312FULL)
 		{
-			download_interface->DownloadURL(0, L"http://ps3xploit.com/hen/release/484/cex/installer/Latest_HEN_Installer_signed.pkg", L"/dev_hdd0");
+			download_interface->DownloadURL(0,(wchar_t *) L"http://ps3xploit.com/hen/release/484/cex/installer/Latest_HEN_Installer_signed.pkg", (wchar_t *) L"/dev_hdd0");
 		}	
 	thread2_download_finish=1;
 }
@@ -324,9 +324,7 @@ static void unload_web_plugins(void)
 
 	explore_interface->ExecXMBcommand("close_all_list", 0, 0);
 }
-
-
-static void henplugin_thread(uint64_t arg)
+static void henplugin_thread(__attribute__((unused)) uint64_t arg)
 {
 	HEN_CONFIG CONFIG;
 	int fd;
@@ -396,7 +394,7 @@ static void henplugin_thread(uint64_t arg)
 	sys_ppu_thread_exit(0);
 }
 
-int henplugin_start(uint64_t arg)
+int henplugin_start(__attribute__((unused)) uint64_t arg)
 {
 	sys_ppu_thread_create(&thread_id, henplugin_thread, 0, 3000, 0x4000, SYS_PPU_THREAD_CREATE_JOINABLE, THREAD_NAME);
 		
@@ -405,14 +403,15 @@ int henplugin_start(uint64_t arg)
 	return SYS_PRX_RESIDENT;
 }
 
-static void henplugin_stop_thread(uint64_t arg)
+static void henplugin_stop_thread(__attribute__((unused)) uint64_t arg)
 {
 	uint64_t exit_code;
 	sys_ppu_thread_join(thread_id, &exit_code);
 	sys_ppu_thread_exit(0);
 }
+extern int henplugin_stop(void);
 
-int henplugin_stop(void)
+int henplugin_stop()
 {
 	sys_ppu_thread_t t_id;
 	int ret = sys_ppu_thread_create(&t_id, henplugin_stop_thread, 0, 3000, 0x2000, SYS_PPU_THREAD_CREATE_JOINABLE, STOP_THREAD_NAME);
