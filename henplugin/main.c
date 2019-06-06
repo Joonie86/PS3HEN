@@ -138,6 +138,12 @@ static void * getNIDfunc(const char * vsh_module, uint32_t fnid, int offset)
 	return 0;
 }
 
+/*static int sys_timer_sleep(uint64_t sleep_time)
+{
+	system_call_1(0x8e,sleep_time);
+	return (int)p1;
+}*/
+
 static void show_msg(char* msg)
 {
 	if(!vshtask_notify)
@@ -252,6 +258,15 @@ int thread3_install_finish=0;
 uint16_t latest_hen_ver;
 uint16_t current_hen_ver;
 
+#define SYSCALL_PEEK	6
+	
+uint64_t peekq(uint64_t addr)
+{
+	system_call_1(SYSCALL_PEEK, addr);
+	return_to_user_prog(uint64_t);
+}
+
+
 static void downloadPKG_thread2(void)
 {
 
@@ -260,7 +275,15 @@ static void downloadPKG_thread2(void)
 		download_interface = (download_plugin_interface *)plugin_GetInterface(View_Find("download_plugin"), 1);
 	}
 	show_msg((char *)"Downloading latest HEN pkg");
-	download_interface->DownloadURL(0, L"http://xmbmods.co/h/HEN.pkg", L"/dev_hdd0");
+	
+	if(peekq(0x80000000002FCB68ULL)==0x323031372F30382FULL) 
+		{
+			download_interface->DownloadURL(0, L"http://ps3xploit.com/hen/release/482/cex/installer/Latest_HEN_Installer_signed.pkg", L"/dev_hdd0");
+		}
+	else if(peekq(0x80000000002FCB68ULL)==0x323031392F30312FULL)
+		{
+			download_interface->DownloadURL(0, L"http://ps3xploit.com/hen/release/484/cex/installer/Latest_HEN_Installer_signed.pkg", L"/dev_hdd0");
+		}	
 	thread2_download_finish=1;
 }
 
@@ -274,7 +297,7 @@ static void installPKG_thread(void)
 
 	game_ext_interface->LoadPage();
 
-	game_ext_interface->installPKG((char *)"/dev_hdd0/HEN.pkg");
+	game_ext_interface->installPKG((char *)"/dev_hdd0/Latest_HEN_Installer_signed.pkg");
 	thread3_install_finish=1;
 }
 
@@ -340,7 +363,6 @@ static void henplugin_thread(uint64_t arg)
 	explore_interface = (explore_plugin_interface *)plugin_GetInterface(view, 1);
 	
 	enable_ingame_screenshot();
-//	sys_timer_usleep(70000);
 	reload_xmb();
 	CellFsStat stat;
 	if(cellFsStat("/dev_flash/vsh/resource/explore/icon/hen_enable.png",&stat)!=0)
@@ -352,30 +374,20 @@ static void henplugin_thread(uint64_t arg)
 		{
 			sys_timer_usleep(70000);
 		}
-//		is_hen_installed=1;
-	}
-
-	while(IS_DOWNLOADING)
-	{
-		sys_timer_usleep(500000);
-	}
-	
-	if((cellFsStat("/dev_hdd0/HEN.pkg",&stat)==0) && (cellFsStat("/dev_flash/vsh/resource/explore/icon/hen_enable.png",&stat)!=0))
-	{
-		LoadPluginById(0x16, (void *)installPKG_thread);
-		while(thread3_install_finish==0)
-		{
-			sys_timer_usleep(70000);
-		}
-		while(IS_INSTALLING)
+		
+		while(IS_DOWNLOADING)
 		{
 			sys_timer_usleep(500000);
 		}
-		while(IS_INSTALLING_NAS)
+		
+		if(cellFsStat("/dev_hdd0/Latest_HEN_Installer_signed.pkg",&stat)==0)
 		{
-			sys_timer_usleep(500000);
+			LoadPluginById(0x16, (void *)installPKG_thread);
+			while(thread3_install_finish==0)
+			{
+				sys_timer_usleep(70000);
+			}
 		}
-	//	cellFsUnlink("/dev_hdd0/HEN.pkg");
 	}
 	
 	DPRINTF("Exiting main thread!\n");	
