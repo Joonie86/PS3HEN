@@ -975,6 +975,7 @@ void unhook_all_modules(void);
 int enable_patches()
 {
 	DPRINTF("enabling patches!\n");
+	suspend_intr();
 				#if defined (FIRMWARE_4_82DEX) ||  defined (FIRMWARE_4_84DEX)
 			do_patch(MKA(vsh_patch),0x386000014E800020);
 			#endif
@@ -1012,6 +1013,7 @@ int enable_patches()
 			hook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
 			hook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
 #endif			
+resume_intr();
 
 	return 0;
 }
@@ -1019,6 +1021,7 @@ int enable_patches()
 int disable_patches()
 {
 	DPRINTF("disabling patches\n");
+	suspend_intr();
 			do_patch32(MKA(patch_func8_offset1),0x7FE307B4);
 #if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)	
 		do_patch32(MKA(patch_func8_offset2),0x48216FB5);
@@ -1042,6 +1045,7 @@ int disable_patches()
 		do_patch(MKA(PATCH_JUMP),0x2F840004409C0048);
 
 		*(uint64_t *)MKA(ECDSA_FLAG)=0;
+		resume_intr();
 		unhook_all_modules();
 		
 		unhook_all_storage_ext();
@@ -1051,8 +1055,10 @@ int disable_patches()
 		unhook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
 	//	remove_pokes();
 #if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)
+		suspend_intr();
 		unhook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
 		unhook_function_with_cond_postcall(update_mgr_read_eeprom_symbol,read_eeprom_by_offset,3);
+		resume_intr();
 #endif
 
 #ifdef DEBUG		
