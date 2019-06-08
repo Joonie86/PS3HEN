@@ -1662,10 +1662,9 @@ int main(void)
 	storage_ext_patches();
 	region_patches();
 //	permissions_patches();
-	
+	init_mount_hdd0();
 	load_boot_plugins();
 	load_boot_plugins_kernel();
-	init_mount_hdd0();
 //	enable_ingame_screenshot();
 	thread_t my_thread;
 	ppu_thread_create(&my_thread, cleanup_thread, 0, -0x1D8, 0x4000, 0, "Cleanup Thread");
