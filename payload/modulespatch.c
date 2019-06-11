@@ -841,6 +841,15 @@ LV2_PATCHED_FUNCTION(int, modules_patching, (uint64_t *arg1, uint32_t *arg2))
 	{
 		uint64_t hash = 0;
 
+#if defined(FIRMWARE_4_84)
+		for (int i = 0; i < 0x100; i++)
+		{
+			hash ^= buf[i];			
+		}
+			
+		hash = (hash << 32) | (total&0xfffff000);
+
+#else
 		for(int i = 0; i < 0x8; i++)  //0x20 bytes only		
 			hash ^= buf[i+0xb0];  //unique location in all files+static hashes between firmware		
 
@@ -850,11 +859,11 @@ LV2_PATCHED_FUNCTION(int, modules_patching, (uint64_t *arg1, uint32_t *arg2))
 			total = (total & 0xff0000); //copy third byte		
 		
 		hash = ((hash << 32) & 0xfffff00000000000) | (total);  //20 bits check, prevent diferent hash just because of minor changes
-
+#endif
 		total = 0;
 		
 		#ifdef	DEBUG
-			//DPRINTF("hash = %lx\n", hash);
+			DPRINTF("hash = %lx\n", hash);
 		#endif
 		
 		switch(hash)
