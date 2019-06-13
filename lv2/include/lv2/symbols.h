@@ -272,6 +272,10 @@
 /* LV2 POKE */
 #define hash_checked_area                               0x352230
 
+#define rsx_syscall_check								0x7e4c
+#define unk_func2_unregister_service					0x99190
+#define unk_func3_unregister_service					0x9DC24
+
 #elif defined(FIRMWARE_4_82DEX) || defined(FIRMWARE_4_84DEX) 
 
 #define TOC 											0x3759C0
@@ -544,6 +548,10 @@
 
 /* LV2 POKE */
 #define hash_checked_area                               0x378960
+
+#define rsx_syscall_check								0x7e4c
+#define unk_func2_unregister_service					0x9e900
+#define unk_func3_unregister_service					0xa3394
 
 #endif /* FIRMWARE */
 

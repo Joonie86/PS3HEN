@@ -4,12 +4,13 @@
 #include <lv2/libc.h>
 #include <lv2/thread.h>
 #include <lv2/patch.h>
+#include <lv2/syscall.h>
 #include <lv1/lv1.h>
 
-//#define STAGE2_FILE_STAT	0x8e000050
-//#define STAGE2_FILE_NREAD	0x8e000008
 #define STAGE2_LOCATION		0x8a080000
 #define SPRX_LOCATION		0x8a070000
+
+void syscall_unregister_service(void);
 
 typedef struct hen_config
 {
@@ -23,29 +24,40 @@ typedef struct hen_config
 void *main(void)
 {
 	void *stage2 = NULL;
-//	f_desc_t f;
-//	int (* func)(void);	
+	f_desc_t f;	
 	HEN_CONFIG CONFIG;
 	CONFIG.config_hdl=*(uint32_t *)0x8d000500;
 	CONFIG.service_hdl1=*(uint32_t *)0x8D0FF050;
 	CONFIG.service_hdl2=*(uint32_t *)0x8D0FF054;
 	CONFIG.service_hdl3=*(uint32_t *)0x8D0FF058;
-	
-	#if defined (FIRMWARE_4_82DEX) ||  defined (FIRMWARE_4_84DEX)
 	CONFIG.service_hdl4=*(uint32_t *)0x8D0FF05c;
-	#else
-	CONFIG.service_hdl4=0;
-	#endif
-	
-	uint64_t read;
-	int dst;
-	if(cellFsOpen("/dev_hdd0/HENCONFIG",CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &dst, 0666, NULL, 0)==0)
-	{
-		cellFsWrite(dst, &CONFIG, sizeof(HEN_CONFIG), &read);
-		cellFsClose(dst);
-	}
 
-//	CellFsStat *stat=(CellFsStat *)STAGE2_FILE_STAT;
+	f.addr=syscall_unregister_service;
+	f.toc=(void*)MKA(TOC);
+	int (*unregister_service)(uint32_t config_hdl,uint32_t service_hdl)=(void*)&f;
+	unregister_service(CONFIG.config_hdl,CONFIG.service_hdl1);
+	unregister_service(CONFIG.config_hdl,CONFIG.service_hdl2);
+	unregister_service(CONFIG.config_hdl,CONFIG.service_hdl3);
+	
+	if(CONFIG.service_hdl4!=0)
+	{
+		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl4); //only dex
+	}
+	
+	f.addr=(void*)MKA(get_syscall_address(0x205));
+	int(*config_close)(uint32_t hdl)=(void*)&f;
+	config_close(CONFIG.config_hdl);
+	
+	uint64_t sc_null = *(uint64_t *)MKA(syscall_table_symbol);
+	uint64_t sc_8 = *(uint64_t *)((MKA(syscall_table_symbol))+8*8);
+	if(sc_8!=sc_null)
+	{
+		uint32_t sce_bytes=0x53434500;
+		*(uint32_t *)0x8a000000=sce_bytes; //hen check
+		return NULL;
+	}
+	
+	int dst;
 
 	for (int i = 0; i < 128; i++)
 	{
@@ -56,7 +68,6 @@ void *main(void)
 	}
 
 	uint64_t size;
-//	size=stat->st_size;
 	size=*(uint64_t *)(STAGE2_LOCATION-8);
 	if(size) // Thanks to @aldostools, this will prevent hang if binary does not have stage2
 	{
@@ -78,11 +89,7 @@ void *main(void)
 		{
 			cellFsWrite(dst, (void*)SPRX_LOCATION, size, &size);
 			cellFsClose(dst);
-		}
-//		f.addr = stage2;	
-//		f.toc = (void *)MKA(TOC);
-//		func = (void *)&f;	
-//		func();		
+		}	
 		return stage2;
 	}
 
