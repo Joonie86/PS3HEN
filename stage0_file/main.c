@@ -9,6 +9,7 @@
 
 #define STAGE2_LOCATION		0x8a080000
 #define SPRX_LOCATION		0x8a070000
+#define SYS_EVENT_QUEUE_DESTROY_FORCE	1
 
 void syscall_unregister_service(void);
 
@@ -54,7 +55,7 @@ void *main(void)
 		
 		f.addr=(void*)MKA(get_syscall_address(0x81));
 		int(*event_queue_destroy_user)(sys_event_queue_t equeu_id, int mode)=(void*)&f;
-		event_queue_destroy_user(to_be_destroyed,0);
+		event_queue_destroy_user(to_be_destroyed,SYS_EVENT_QUEUE_DESTROY_FORCE);
 	}
 	
 	*(uint32_t *)0x8d000500=0;
@@ -80,7 +81,7 @@ void *main(void)
 	
 	int dst;
 
-	for (int i = 0; i < 128; i++)
+	for (int i = 0; i < 127; i++)
 	{
 		uint64_t pte0 = *(uint64_t *)(MKA(0xf000000 | (i<<7)));
 		uint64_t pte1 = *(uint64_t *)(MKA(0xf000000 | ((i<<7)+8)));

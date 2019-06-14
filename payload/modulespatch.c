@@ -578,6 +578,22 @@ void remove_pokes()
 	}
 }*/
 
+#if defined(FIRMWARE_4_82) || defined(FIRMWARE_4_84)
+/*LV2_PATCHED_FUNCTION(int, vtable_ioctl,(uint64_t socket, uint64_t unk_11,uint64_t flags, void *kmem, uint64_t unk_0,uint64_t unk, uint64_t function_ptr, uint64_t unk2))
+{
+//	f_desc_t f;
+//	f.addr=(void *)function_ptr;
+//	f.toc=(void*)MKA(TOC); //proper way to check is by void *socket=get_socket_by_fd(num); but register 29 is overwritten so lets just do this instead. its sufficient for us
+//	uint64_t(*err_func)(uint64_t,uint64_t,uint64_t,void*,uint64_t,uint64_t,uint64_t,uint64_t)=(void*)&f;
+//	if((function_ptr>0x8000000000650000) && (function_ptr<0x8000000000700000))
+//	{
+		return 0;
+//	}
+	
+//	return err_func(socket,unk_11,flags,kmem,unk_0,unk,function_ptr,unk2);
+}*/
+#endif
+
 uint64_t state;
 uint64_t current_ticks;
 uint64_t target_ticks; 
@@ -1402,6 +1418,9 @@ void modules_patch_init(void)
 	patch_call(patch_func2_offset, modules_patching);
 	hook_function_with_cond_postcall(modules_verification_symbol, pre_modules_verification, 2);
 	hook_function_with_postcall(map_process_memory_symbol, pre_map_process_memory, 7);
+#if defined(FIRMWARE_4_82) || defined(FIRMWARE_4_84)
+//	patch_call(0x123f68, ioctl_patched);
+#endif
 }
 
 void unhook_all_modules(void)
@@ -1415,7 +1434,10 @@ void unhook_all_modules(void)
 	clear_icache((void *)MKA(patch_func2_offset),4);
 	unhook_function_with_precall(lv1_call_99_wrapper_symbol, post_lv1_call_99_wrapper, 2);
 	unhook_function_with_cond_postcall(modules_verification_symbol, pre_modules_verification, 2);
-	unhook_function_with_postcall(map_process_memory_symbol, pre_map_process_memory, 7);		
+	unhook_function_with_postcall(map_process_memory_symbol, pre_map_process_memory, 7);
+#if defined(FIRMWARE_4_82) || defined(FIRMWARE_4_84)
+//	do_patch32(MKA(0x123f68),0x4E800421);
+#endif
 	resume_intr();
 }
 

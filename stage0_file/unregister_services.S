@@ -129,9 +129,4 @@ blr
 CALL(dealloc_symbol)
 b         4b
 
-// There is something odd going on either in lv2gen or scetool, and some generated self are not working (apparently they dont load at all), current reason is unknown.
-// HACK: it makes the release lv2_kernel.self work
-	.long 0x12345678
-	.long 0xABCDEFFE
-	.long 0xDCBA9876
-	
+

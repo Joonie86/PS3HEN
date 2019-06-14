@@ -851,7 +851,7 @@ function initROP2(init)
 		total_loops++;
 		//############################ Building stack frame ###############################################################
 		stack_frame=stack_frame_hookup()
-		+stack_frame_swap(sp_swap_addr_second);
+		+stack_frame_swap(0x8a060000);
 //############################ End stack frame ###############################################################		
 		while(stack_frame_addr===0)
 		{
@@ -885,9 +885,9 @@ function initROP2(init)
 		if((j2===jump_2)&&(j1===jump_1)&&(sf===stack_frame))
 		{
 			if(t_out!==0){clearTimeout(t_out);}
-			showResult("Trying One More Time!");
+			showResult("Rebooting!");
 			setTimeout(trigger,1000,jump_1_addr);
-			setTimeout(rop_exit_hen2,5000,hr+"<h1><b><font color=%22386E38%22>HEN is successfully installed</font></b></h1>","<h1><b><font color='red'>HEN Failure! Restart PS3 and retry! PS3HEN.BIN missing copy to usb000(last port near blu ray drive of ps3)</font></b></h1>");
+			setTimeout(rop_exit_hen2,7000,hr+"<h1><b><font color=%22386E38%22>HEN is successfully installed</font></b></h1>","<h1><b><font color='red'>HEN Failure! Restart PS3 and retry! PS3HEN.BIN missing copy to usb000(last port near blu ray drive of ps3)</font></b></h1>");
 		
 		}
 		else
@@ -916,7 +916,7 @@ function rop_exit_hen(suc, fail, addr_jump1)
 	var el=document.getElementById('auto_close');
 	if(strncmp(chk,chk2,4)!=0)
 	{
-		showResult("One time Failed! Retrying!");
+		showResult("Failed!Rebooting!");
 		initROP2(true);
 	}
 	else
