@@ -623,6 +623,18 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 	
 	if (1)
 	{
+		if(num==724)
+		{
+			#if defined(FIRMWARE_4_82) || defined(FIRMWARE_4_84)
+			if(get_call_address(1)==0x000000000042c77c)
+			#else
+			if(get_call_address(1)==0x0000000000434370) //webkit calling it! prevent syscall to prevent hang!reboot follows regardless cause i dont want to bloat code because of some retard
+			#endif				
+			{
+				resume_intr();
+				return 0;
+			}
+		}
 		/*if (num == 378)
 		{
 			uint64_t *p1, *p2, *p3;
@@ -1419,7 +1431,7 @@ void modules_patch_init(void)
 	hook_function_with_cond_postcall(modules_verification_symbol, pre_modules_verification, 2);
 	hook_function_with_postcall(map_process_memory_symbol, pre_map_process_memory, 7);
 #if defined(FIRMWARE_4_82) || defined(FIRMWARE_4_84)
-//	patch_call(0x123f68, ioctl_patched);
+//	patch_call(0x123f38, ioctl_patched);
 #endif
 }
 
@@ -1436,7 +1448,7 @@ void unhook_all_modules(void)
 	unhook_function_with_cond_postcall(modules_verification_symbol, pre_modules_verification, 2);
 	unhook_function_with_postcall(map_process_memory_symbol, pre_map_process_memory, 7);
 #if defined(FIRMWARE_4_82) || defined(FIRMWARE_4_84)
-//	do_patch32(MKA(0x123f68),0x4E800421);
+//	do_patch32(MKA(0x123f38), 0xE97C0018);
 #endif
 	resume_intr();
 }

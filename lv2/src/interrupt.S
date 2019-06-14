@@ -17,6 +17,8 @@ ioctl_patched:
 	stdu %r1, -0x80(%r1)
 	std	%r31, 0x78(%r1)
 	std	%r30, 0x70(%r1)
+	std	%r29, 0x68(%r1)
+	b 3f
 	lis 	  %r31, 0x8000000000650000@highest   
 	ori 	  %r31, %r31, 0x8000000000650000@higher  
 	rldicr    %r31, %r31,32,31 
@@ -27,21 +29,28 @@ ioctl_patched:
 	rldicr    %r30, %r30,32,31 
 	oris      %r30, %r30,0x8000000000700000@h   
 	ori       %r30, %r30,0x8000000000700000@l 
-	cmpd cr7, %r9, %r30
+	ld	%r29,0x18(%r28)
+	cmpd cr7, %r29, %r30
 	ble cr7, 2f
-	bctrl
+	mr	%r11, %r29
 1:
 	ld %r31, 0x78(%r1)
 	ld %r30, 0x70(%r1)
+	ld %r29, 0x68(%r1)
 	addi %r1, %r1, 0x80
 	ld %r0, 0x10(%r1)
 	mtlr	%r0
 	blr
 2:
-	cmpd cr7, %r9, %r31
+	cmpd cr7, %r29, %r31
 	bge	cr7, 3f
 	b 1b
 3:
+	ld %r31, 0x78(%r1)
+	ld %r30, 0x70(%r1)
+	ld %r29, 0x68(%r1)
+	addi %r1, %r1, 0x80
+	ld %r0, 0x10(%r1)
 	ld %r3, -0x1e88(%r2)
 	li %r5,0
 	li %r6,0
