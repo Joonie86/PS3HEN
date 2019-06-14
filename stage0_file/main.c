@@ -31,22 +31,38 @@ void *main(void)
 	CONFIG.service_hdl2=*(uint32_t *)0x8D0FF054;
 	CONFIG.service_hdl3=*(uint32_t *)0x8D0FF058;
 	CONFIG.service_hdl4=*(uint32_t *)0x8D0FF05c;
+	typedef uint32_t sys_event_queue_t;
+	sys_event_queue_t to_be_destroyed=*(uint32_t *)0x8D0FF060;
 
-	f.addr=syscall_unregister_service;
-	f.toc=(void*)MKA(TOC);
-	int (*unregister_service)(uint32_t config_hdl,uint32_t service_hdl)=(void*)&f;
-	unregister_service(CONFIG.config_hdl,CONFIG.service_hdl1);
-	unregister_service(CONFIG.config_hdl,CONFIG.service_hdl2);
-	unregister_service(CONFIG.config_hdl,CONFIG.service_hdl3);
-	
-	if(CONFIG.service_hdl4!=0)
+	if(CONFIG.service_hdl1)
 	{
-		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl4); //only dex
+		f.addr=syscall_unregister_service;
+		f.toc=(void*)MKA(TOC);
+		int (*unregister_service)(uint32_t config_hdl,uint32_t service_hdl)=(void*)&f;
+		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl1);
+		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl2);
+		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl3);
+		
+		if(CONFIG.service_hdl4!=0)
+		{
+			unregister_service(CONFIG.config_hdl,CONFIG.service_hdl4); //only dex
+		}
+		
+		f.addr=(void*)MKA(get_syscall_address(0x205));
+		int(*config_close)(uint32_t hdl)=(void*)&f;
+		config_close(CONFIG.config_hdl);
+		
+		f.addr=(void*)MKA(get_syscall_address(0x81));
+		int(*event_queue_destroy_user)(sys_event_queue_t equeu_id, int mode)=(void*)&f;
+		event_queue_destroy_user(to_be_destroyed,0);
 	}
 	
-	f.addr=(void*)MKA(get_syscall_address(0x205));
-	int(*config_close)(uint32_t hdl)=(void*)&f;
-	config_close(CONFIG.config_hdl);
+	*(uint32_t *)0x8d000500=0;
+	*(uint32_t *)0x8D0FF050=0;
+	*(uint32_t *)0x8D0FF054=0;
+	*(uint32_t *)0x8D0FF058=0;
+	*(uint32_t *)0x8D0FF05c=0;
+	*(uint32_t *)0x8D0FF060=0;
 	
 	uint64_t sc_null = *(uint64_t *)MKA(syscall_table_symbol);
 	uint64_t sc_8 = *(uint64_t *)((MKA(syscall_table_symbol))+8*8);
@@ -56,6 +72,11 @@ void *main(void)
 		*(uint32_t *)0x8a000000=sce_bytes; //hen check
 		return NULL;
 	}
+	
+/*	f.addr=(void*)MKA(get_syscall_address(8));
+	uint16_t (*hen_check)(uint64_t param)=(void*)&f;
+	if(hen_check(0x1337)==0x1337)
+		return NULL;*/
 	
 	int dst;
 

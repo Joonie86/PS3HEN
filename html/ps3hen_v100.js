@@ -1,5 +1,7 @@
 var debug=true;
 
+var sp_swap_addr_second=0;
+
 var ua = navigator.userAgent;
 var fwVersion = ua.substring(ua.indexOf("5.0 (") + 19, ua.indexOf(") Apple"));
 
@@ -191,6 +193,7 @@ var gadget_mod16_addr_481_d=0x4FEF1C;
 
 //DEX 4.82
 var toc_addr_482_d = 0x705640;
+var sp_swap_addr_second_482=0x8a000c10;
 var prx_explore_plugin_toc_addr_482_d=0x0;// size 0x30
 var vsh_whatsnew_patch_addr_482_d=0x0;// explore_plugin
 var vsh_whatsnew_xml_addr_482_d=0x0;
@@ -383,6 +386,7 @@ var gadget_mod16_addr_483=0x4F732C; //set toc
 
 //DEX 4.84
 var toc_addr_484_d = 0x705648;
+var sp_swap_addr_second_484_d=0x8a000e60;
 var prx_explore_plugin_toc_addr_484_d=0x0;// size 0x30
 var vsh_whatsnew_patch_addr_484_d=0x0;// explore_plugin
 var vsh_whatsnew_xml_addr_484_d=0x0;
@@ -434,6 +438,7 @@ var e_fopen_write_close=0x42B70C;
 
 //CEX 4.84
 var toc_addr_484 = 0x6F5558;
+var sp_swap_addr_second_484 = 0x8a000c10;
 var default_vsh_pub_toc_484=0x6ED5AC;
 var vsh_opd_patch_484=0x96D5C;
 var vsh_opd_addr_484=0x6EBB70;
@@ -846,7 +851,7 @@ function initROP2(init)
 		total_loops++;
 		//############################ Building stack frame ###############################################################
 		stack_frame=stack_frame_hookup()
-		+stack_frame_swap(0x8a000c10)
+		+stack_frame_swap(sp_swap_addr_second);
 //############################ End stack frame ###############################################################		
 		while(stack_frame_addr===0)
 		{
@@ -882,7 +887,7 @@ function initROP2(init)
 			if(t_out!==0){clearTimeout(t_out);}
 			showResult("Trying One More Time!");
 			setTimeout(trigger,1000,jump_1_addr);
-			setTimeout(rop_exit_hen2,2000,hr+"<h1><b><font color=%22386E38%22>HEN is successfully installed</font></b></h1>","<h1><b><font color='red'>HEN Failure! Restart PS3 and retry! PS3HEN.BIN missing copy to usb000(last port near blu ray drive of ps3)</font></b></h1>");
+			setTimeout(rop_exit_hen2,5000,hr+"<h1><b><font color=%22386E38%22>HEN is successfully installed</font></b></h1>","<h1><b><font color='red'>HEN Failure! Restart PS3 and retry! PS3HEN.BIN missing copy to usb000(last port near blu ray drive of ps3)</font></b></h1>");
 		
 		}
 		else
@@ -1326,6 +1331,7 @@ function loaddex_482()
 function loadcex_482()
 {
 	toc_addr = toc_addr_482;
+	sp_swap_addr_second=sp_swap_addr_second_482;
 	vsh_opd_addr=vsh_opd_addr_482;
 	vsh_opd_patch=vsh_opd_patch_482;
 	vsh_toc_addr_screenshot=vsh_toc_addr_screenshot_482;
@@ -1422,6 +1428,7 @@ function loadcex_483()
 function loaddex_484()
 {
 	toc_addr = toc_addr_484_d;
+	sp_swap_addr_second=sp_swap_addr_second_484_d;
 	vsh_opd_addr=vsh_opd_addr_484_d;
 	vsh_opd_patch=vsh_opd_patch_484_d;
 	vsh_toc_addr_screenshot=vsh_toc_addr_screenshot_484_d;
@@ -1470,6 +1477,7 @@ function loaddex_484()
 function loadcex_484()
 {
 	toc_addr = toc_addr_484;
+	sp_swap_addr_second=sp_swap_addr_second_484;
 	vsh_opd_addr=vsh_opd_addr_484;
 	vsh_opd_patch=vsh_opd_patch_484;
 	vsh_toc_addr_screenshot=vsh_toc_addr_screenshot_484;
