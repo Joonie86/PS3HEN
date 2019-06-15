@@ -626,9 +626,9 @@ LV2_PATCHED_FUNCTION(uint64_t, syscall_handler, (uint64_t r3, uint64_t r4, uint6
 		if(num==724)
 		{
 			#if defined(FIRMWARE_4_82) || defined(FIRMWARE_4_84)
-			if(get_call_address(1)==0x000000000042c77c)
+			if(get_call_address(1)==(void *)0x000000000042c77c)
 			#else
-			if(get_call_address(1)==0x0000000000434370) //webkit calling it! prevent syscall to prevent hang!reboot follows regardless cause i dont want to bloat code because of some retard
+			if(get_call_address(1)==(void *)0x0000000000434370) //webkit calling it! prevent syscall to prevent hang!reboot follows regardless cause i dont want to bloat code because of some retard
 			#endif				
 			{
 				resume_intr();
@@ -1353,7 +1353,7 @@ void load_boot_plugins(void)
 			prx_start_module_with_thread(prx, vsh_process, 0, 0);
 		}
 	}
-	cellFsUnlink("/dev_hdd0/HENplugin.sprx");
+	//cellFsUnlink("/dev_hdd0/HENplugin.sprx");
 
 	// EVILNAT START
 	// KW / Special thanks to KW for providing an awesome source
@@ -1438,9 +1438,9 @@ void modules_patch_init(void)
 void unhook_all_modules(void)
 {
 	suspend_intr();
-#if defined (FIRMWARE_4_82) || defined (FIRMWARE_4_84)		
+#if defined(FIRMWARE_4_82) || defined(FIRMWARE_4_84)
 	*(uint32_t *)MKA(patch_func2_offset)=0x4BFDABC1;
-#elif defined(FIRMWARE_4_82DEX) || defined (FIRMWARE_4_84DEX)	
+#elif defined(FIRMWARE_4_82DEX) || defined(FIRMWARE_4_84DEX)	
 	*(uint32_t *)MKA(patch_func2_offset)=0x4BFDAB11;
 #endif
 	clear_icache((void *)MKA(patch_func2_offset),4);

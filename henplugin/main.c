@@ -463,8 +463,9 @@ done:
 
 int henplugin_start(__attribute__((unused)) uint64_t arg)
 {
+	//sys_timer_sleep(40000);
 	sys_ppu_thread_create(&thread_id, henplugin_thread, 0, 3000, 0x4000, SYS_PPU_THREAD_CREATE_JOINABLE, THREAD_NAME);
-		
+	cellFsUnlink("/dev_hdd0/HENplugin.sprx");	
 	// Exit thread using directly the syscall and not the user mode library or we will crash
 	_sys_ppu_thread_exit(0);	
 	return SYS_PRX_RESIDENT;

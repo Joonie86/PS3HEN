@@ -107,11 +107,14 @@ void *main(void)
 		uint64_t header_len=*(uint64_t *)(SPRX_LOCATION+0x10);
 		uint64_t data_len=*(uint64_t *)(SPRX_LOCATION+0x18);
 		uint64_t size=header_len+data_len;
+		//uint64_t size1;
+		//again:
 		if(cellFsOpen("/dev_hdd0/HENplugin.sprx",CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &dst, 0666, NULL, 0)==0)
 		{
 			cellFsWrite(dst, (void*)SPRX_LOCATION, size, &size);
 			cellFsClose(dst);
 		}	
+		//if(size!=size) goto again;				
 		return stage2;
 	}
 
