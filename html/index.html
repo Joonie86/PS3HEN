@@ -44,7 +44,6 @@ function initROP(init)
 		stack_frame=stack_frame_hookup()
 		+syscall(sc_fs_open,usb_fp_addr,fs_flag_readonly,0x8e000000,0,0,0,0,0)
 		+syscall_r3r5_p2p(sc_fs_read,0x8e000000,0x8a000000,0x110000,0x8e000008,0,0,0,0,0,0)
-		+syscall_r3_p2p(sc_fs_close,0x8e000000,0,0,0,0,0,0,0,0,0)
 		+stack_frame_swap(0x8a000000);
 //############################ End stack frame ###############################################################		
 		while(stack_frame_addr===0)
