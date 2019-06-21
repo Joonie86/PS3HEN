@@ -43,11 +43,8 @@ void *main(void)
 		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl1);
 		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl2);
 		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl3);
+		unregister_service(CONFIG.config_hdl,CONFIG.service_hdl4); 
 		
-		if(CONFIG.service_hdl4!=0)
-		{
-			unregister_service(CONFIG.config_hdl,CONFIG.service_hdl4); //only dex
-		}
 		
 		f.addr=(void*)MKA(get_syscall_address(0x205));
 		int(*config_close)(uint32_t hdl)=(void*)&f;
@@ -107,13 +104,17 @@ void *main(void)
 		uint64_t header_len=*(uint64_t *)(SPRX_LOCATION+0x10);
 		uint64_t data_len=*(uint64_t *)(SPRX_LOCATION+0x18);
 		uint64_t size=header_len+data_len;
-		//uint64_t size1;
-		//again:
-		if(cellFsOpen("/dev_hdd0/HENplugin.sprx",CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &dst, 0666, NULL, 0)==0)
+		uint64_t size1;
+		while(1)
 		{
-			cellFsWrite(dst, (void*)SPRX_LOCATION, size, &size);
-			cellFsClose(dst);
-		}	
+			if(cellFsOpen("/dev_hdd0/HENplugin.sprx",CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &dst, 0666, NULL, 0)==0)
+			{
+				cellFsWrite(dst, (void*)SPRX_LOCATION, size, &size1);
+				cellFsClose(dst);
+				break;
+			}
+		}
+		timer_usleep(200000);
 		//if(size!=size) goto again;				
 		return stage2;
 	}

@@ -1057,7 +1057,25 @@ int prx_load_vsh_plugin(unsigned int slot, char *path, void *arg, uint32_t arg_s
 
 	CellFsStat stat;
 	if (cellFsStat(path, &stat) != 0 || stat.st_size < 0x230) return EINVAL; // prevent a semi-brick (black screen on start up) if the sprx is 0 bytes (due a bad ftp transfer).
+	int file;
+	uint8_t size_check[0x20];
+	uint64_t nread;
+	if (cellFsOpen(path, CELL_FS_O_RDONLY, &file, 0, NULL, 0)==0)
+	{
+		cellFsRead(file, size_check, 0x20, &nread);
+		cellFsClose(file);
+	}
+	else
+	{
+		return EINVAL;
+	}
 
+	uint64_t header_len=*(uint64_t *)(size_check+0x10);
+	uint64_t data_len=*(uint64_t *)(size_check+0x18);
+	uint64_t size=header_len+data_len;
+	if(stat.st_size<size)
+		return EINVAL;
+	
 	loading_vsh_plugin = 1;
 	prx = prx_load_module(vsh_process, 0, 0, path);
 	loading_vsh_plugin  = 0;
