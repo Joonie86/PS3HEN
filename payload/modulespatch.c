@@ -227,8 +227,8 @@ SprxPatch download_plugin_patches[] =
 	{elf_patch3_download,0x78000000 , &condition_true},	
 	{elf_patch3_download+0x9A,0x78000000 , &condition_true},		// allow XML files to be downloaded
 	{elf_patch4_download,0x78787800 , &condition_true},	
-	/*{elf_patch5_download,0 , &condition_true},	 /tmp
-	{elf_patch5_download+8,0 , &condition_true},	/downloader
+	/*{elf_patch5_download,0 , &condition_true},	
+	{elf_patch5_download+8,0 , &condition_true},	
 	{elf_patch5_download+0x0C,0 , &condition_true},	
 	{elf_patch5_download+0x10,0 , &condition_true},*/		
 	{elf_patch6_download,0x6F637465 , &condition_true},	
@@ -657,8 +657,10 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 		if((*(uint64_t *)(saved_sce_hdr+0x48)>=0x200) || (*(uint64_t *)(saved_sce_hdr+0x48)==0x130))
 		{
 			sleep_done=0;
+			event_queue_drain(result_queue);
 			event_port_send(command_port, CMD_DISABLE_PATCHES, (uint64_t)&res,0);
 			event_queue_receive(result_queue, &event, 0);
+			event_queue_drain(result_queue);
 			DPRINTF("SELF loading!\n");
 			suspend_intr();
 			uint64_t state = spin_lock_irqsave();
@@ -677,6 +679,7 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 			resume_intr();
 			event_port_send(command_port, CMD_ENABLE_PATCHES, (uint64_t)&res,0);
 			event_queue_receive(result_queue, &event, 0);
+			event_queue_drain(result_queue);
 		}
 	}
 

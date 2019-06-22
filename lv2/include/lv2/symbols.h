@@ -96,6 +96,7 @@
 
 #define event_queue_create_symbol						0x13380
 #define event_queue_destroy_symbol						0x13308
+#define event_queue_drain_symbol						0x2b7cc
 #define event_queue_receive_symbol						0x1314C
 #define event_queue_tryreceive_symbol					0x13218
 #define event_queue_buff_not_recieved_symbol					0x4ef5c
@@ -369,6 +370,7 @@
 
 #define event_queue_create_symbol						0x139D0
 #define event_queue_destroy_symbol						0x13958
+#define event_queue_drain_symbol						0x2D890 //PLS FIX
 #define event_queue_receive_symbol						0x1379C
 #define event_queue_tryreceive_symbol					0x13868
 #define event_queue_buff_not_recieved_symbol					0x52904
