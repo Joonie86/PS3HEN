@@ -227,10 +227,10 @@ SprxPatch download_plugin_patches[] =
 	{elf_patch3_download,0x78000000 , &condition_true},	
 	{elf_patch3_download+0x9A,0x78000000 , &condition_true},		// allow XML files to be downloaded
 	{elf_patch4_download,0x78787800 , &condition_true},	
-	{elf_patch5_download,0 , &condition_true},	
-	{elf_patch5_download+8,0 , &condition_true},	
+	/*{elf_patch5_download,0 , &condition_true},	 /tmp
+	{elf_patch5_download+8,0 , &condition_true},	/downloader
 	{elf_patch5_download+0x0C,0 , &condition_true},	
-	{elf_patch5_download+0x10,0 , &condition_true},		
+	{elf_patch5_download+0x10,0 , &condition_true},*/		
 	{elf_patch6_download,0x6F637465 , &condition_true},	
 	{elf_patch6_download+4,0x742D7374 , &condition_true},		
 	{elf_patch6_download+8,0x7265616D , &condition_true},	
