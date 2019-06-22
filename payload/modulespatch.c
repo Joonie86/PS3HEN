@@ -719,7 +719,7 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 			uint64_t state = spin_lock_irqsave();
 			DPRINTF("interrupt suspended! 6:20am\n");;
 			current_ticks=get_ticks();
-			target_ticks=current_ticks+0x2800000; // Testing
+			target_ticks=current_ticks+0x3000000; // Testing
 			while(get_ticks()<target_ticks)
 			{}
 //			func_sleep.addr=(void*)MKA(get_syscall_address(141));

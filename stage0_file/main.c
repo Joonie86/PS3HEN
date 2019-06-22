@@ -99,24 +99,26 @@ void *main(void)
 	
 	if (stage2)
 	{
-		uint32_t sce_bytes=0x53434500;
-		*(uint32_t *)0x8a000000=sce_bytes; //hen check
 		uint64_t header_len=*(uint64_t *)(SPRX_LOCATION+0x10);
 		uint64_t data_len=*(uint64_t *)(SPRX_LOCATION+0x18);
 		uint64_t size=header_len+data_len;
 		uint64_t size1;
-		while(1)
+		for(uint8_t retry = 0; retry < 10; retry++)
 		{
+			timer_usleep(100000);
 			if(cellFsOpen("/dev_hdd0/HENplugin.sprx",CELL_FS_O_WRONLY|CELL_FS_O_CREAT|CELL_FS_O_TRUNC, &dst, 0666, NULL, 0)==0)
 			{
 				cellFsWrite(dst, (void*)SPRX_LOCATION, size, &size1);
 				cellFsClose(dst);
+				uint32_t sce_bytes=0x53434500;
+				*(uint32_t *)0x8a000000=sce_bytes; //hen check
 				break;
 			}
 		}
 		timer_usleep(200000);
-		//if(size!=size) goto again;				
-		return stage2;
+		//if(size!=size) goto again;
+		if(size1)
+			return stage2;
 	}
 
 	return NULL;
