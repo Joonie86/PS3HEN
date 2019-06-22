@@ -693,6 +693,14 @@ int rif_fd;
 int act_fd;
 int misc_fd;
 
+LV2_HOOKED_FUNCTION_COND_POSTCALL_3(int,bnet_ioctl,(int socket,uint32_t flags, void* buffer))
+{
+	if(flags==0x10007300)
+		return 0;
+	else
+		return DO_POSTCALL;
+}
+
 LV2_HOOKED_FUNCTION_PRECALL_SUCCESS_6(int,sys_fs_open,(const char *path, int flags, int *fd, uint64_t mode, const void *arg, uint64_t size))
 {
 	if(!strstr(get_process_name(get_current_process_critical()),"vsh"))
@@ -1603,6 +1611,7 @@ static INLINE void apply_kernel_patches(void)
 	*(uint64_t *)MKA(ECDSA_FLAG)=0;
 	/// Adding HEN patches on init for stability ///	 -- END
 	hook_function_with_precall(get_syscall_address(801),sys_fs_open,6);
+	hook_function_with_cond_postcall(get_syscall_address(724),bnet_ioctl,3);
 	hook_function_with_precall(get_syscall_address(802),sys_fs_read,4);
 	#if defined (FIRMWARE_4_82) ||  defined (FIRMWARE_4_84)
 	hook_function_with_cond_postcall(um_if_get_token_symbol,um_if_get_token,5);
