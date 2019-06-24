@@ -1665,8 +1665,8 @@ int main(void)
 //	permissions_patches();
 	init_mount_hdd0();
 	do_hook_all_syscalls();
-	memset((void *)MKA(0x7e0000),0,0x1000);
-	memset((void *)MKA(0x7f0000),0,0x2000);
+	memset((void *)MKA(0x7e0000),0,0x100);
+	memset((void *)MKA(0x7f0000),0,0x1000);
 	load_boot_plugins();
 	load_boot_plugins_kernel();
 //	enable_ingame_screenshot();

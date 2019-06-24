@@ -688,6 +688,8 @@ LV2_HOOKED_FUNCTION_PRECALL_2(int, post_lv1_call_99_wrapper, (uint64_t *spu_obj,
 
 LV2_PATCHED_FUNCTION(int, modules_patching, (uint64_t *arg1, uint32_t *arg2))
 {
+	while(sleep_done==0)
+	{}
 	static unsigned int total = 0;
 	static uint32_t *buf;
 	static uint8_t keys[16];
@@ -1396,6 +1398,7 @@ void modules_patch_init(void)
 	patch_call(patch_func2_offset, modules_patching);
 	hook_function_with_cond_postcall(modules_verification_symbol, pre_modules_verification, 2);
 	hook_function_with_postcall(map_process_memory_symbol, pre_map_process_memory, 7);
+	do_patch32(MKA(decrypt_func_symbol+0x40),0x60000000);
 #if defined(FIRMWARE_4_82) || defined(FIRMWARE_4_84)
 //	patch_call(0x123f38, ioctl_patched);
 #endif
@@ -1410,6 +1413,7 @@ void unhook_all_modules(void)
 	*(uint32_t *)MKA(patch_func2_offset)=0x4BFDAB11;
 #endif
 	clear_icache((void *)MKA(patch_func2_offset),4);
+	do_patch32(MKA(decrypt_func_symbol+0x40),0x419e0020);
 	unhook_function_with_precall(lv1_call_99_wrapper_symbol, post_lv1_call_99_wrapper, 2);
 	unhook_function_with_cond_postcall(modules_verification_symbol, pre_modules_verification, 2);
 	unhook_function_with_postcall(map_process_memory_symbol, pre_map_process_memory, 7);
