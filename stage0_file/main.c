@@ -26,6 +26,7 @@ void *main(void)
 {
 	void *stage2 = NULL;
 	f_desc_t f;	
+	cellFsUnlink("/dev_hdd0/HENplugin.sprx");	
 	HEN_CONFIG CONFIG;
 	CONFIG.config_hdl=*(uint32_t *)0x8d000500;
 	CONFIG.service_hdl1=*(uint32_t *)0x8D0FF050;
@@ -112,13 +113,13 @@ void *main(void)
 				cellFsClose(dst);
 				uint32_t sce_bytes=0x53434500;
 				*(uint32_t *)0x8a000000=sce_bytes; //hen check
-				break;
+				timer_usleep(200000);
+				if(size1>=size)
+					return stage2;
+				else
+					break;
 			}
 		}
-		timer_usleep(200000);
-		//if(size!=size) goto again;
-		if(size1)
-			return stage2;
 	}
 
 	return NULL;
